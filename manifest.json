@@ -1,0 +1,26 @@
+{
+  "name": "DELLA CRM",
+  "short_name": "DELLA",
+  "description": "نظام إدارة علاقات العملاء للعقارات - DELLA CRM",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#012d2d",
+  "theme_color": "#012d2d",
+  "orientation": "portrait",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
