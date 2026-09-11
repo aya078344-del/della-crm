@@ -1,190 +1,26 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DELLA CRM | النظام المتكامل</title>
-    <link href="https://jsdelivr.net" rel="stylesheet">
-    <script src="https://jsdelivr.net"></script>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; }
-        .sidebar { width: 250px; background: #1e293b; color: #fff; min-height: 100vh; padding: 20px; position: fixed; z-index: 100; }
-        .menu { list-style: none; padding: 0; }
-        .menu li { padding: 12px; cursor: pointer; border-radius: 6px; margin-bottom: 5px; transition: 0.3s; color: #cbd5e1; }
-        .menu li:hover, .menu li.active { background: #334155; color: #fff; fw-bold; }
-        .main-content { margin-right: 250px; padding: 30px; width: calc(100% - 250px); }
-        .crm-section { display: none; }
-        .crm-section.active { display: block; }
-        .modal { background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
-        .card { border: none; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-    </style>
-</head>
-<body>
-
-    <div class="d-flex">
-        <!-- القائمة الجانبية (Sidebar) المعتمدة بنظام data-section -->
-        <div class="sidebar">
-            <div class="logo mb-4 fw-bold fs-4 text-center text-primary">DELLA CRM</div>
-            <ul class="menu">
-                <li data-section="customersSection" class="active">👥 العملاء</li>
-                <li data-section="leadsSection">📞 العملاء المحتملون</li>
-                <li data-section="propertiesSection">🏢 العقارات</li>
-                <li data-section="dealsSection">💰 الصفقات</li>
-                <li data-section="finishesSection">🎨 التشطيبات</li>
-                <!-- قسم المقاولين المدمج بنظامكِ الموثق في الصور -->
-                <li data-section="contractorsSection">👷‍♂️ المقاولين والمطورين</li>
-                <li data-section="publishingSection">📣 النشر</li>
-                <li data-section="supportSection">🎧 الدعم الفني</li>
-                <li data-section="leaderboardSection">🏆 لوحة الصدارة</li>
-                <li data-section="areasSection">📍 المدن والمناطق</li>
-                <li data-section="attendanceSection">🕐 الحضور والانصراف</li>
-            </ul>
-        </div>
-
-        <!-- المحتوى الرئيسي للمشروع -->
-        <div class="main-content">
-            
-            <!-- 1. قسم العملاء -->
-            <div id="customersSection" class="crm-section active">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2>👥 إدارة العملاء</h2>
-                    <button class="btn btn-primary" onclick="openModal('addCustomerModal')">＋ إضافة عميل</button>
-                </div>
-                <div class="card p-4">
-                    <p class="text-muted text-center">جاري تحميل بيانات العملاء من قاعدة البيانات...</p>
-                </div>
-            </div>
-
-            <!-- 2. قسم المقاولين والمطورين المدمج الجديد -->
-            <div id="contractorsSection" class="crm-section">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h1>👷‍♂️ المقاولين والمطورين</h1>
-                        <p class="text-muted">تابعي المقاولين، المطورين العقاريين، والمكاتب الاستشارية ومشاريعهم الحالية</p>
-                    </div>
-                    <button class="btn btn-primary" onclick="openModal('addContractorModal')">＋ إضافة مقاول / مطور</button>
-                </div>
-
-                <div class="row mb-4">
-                    <div class="col-md-4">
-                        <div class="card bg-info text-white p-3">
-                            <h5>إجمالي المقاولين والمطورين</h5>
-                            <h3 id="totalContractorsCount">0</h3>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card p-3">
-                    <div class="table-responsive">
-                        <table class="table table-striped align-middle">
-                            <thead>
-                                <tr>
-                                    <th>الاسم</th>
-                                    <th>رقم الهاتف</th>
-                                    <th>اسم الشركة</th>
-                                    <th>نوع العمل</th>
-                                    <th>المشروع الحالي</th>
-                                    <th>ملاحظات</th>
-                                    <th>إجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody id="contractorsTableBody">
-                                <!-- البيانات هتنزل هنا بالـ JavaScript تلقائياً -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- وبقية الأقسام (العقارات والصفقات والتشطيبات) ستفتح تلقائياً بحسب التنقل المبرمج -->
-        </div>
-    </div>
-
-    <!-- مودال إضافة مقاول جديد -->
-    <div id="addContractorModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999;">
-        <div class="modal-dialog modal-dialog-centered" style="width: 500px;">
-            <div class="modal-content p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3 class="m-0">إضافة مقاول / مطور جديد</h3>
-                    <button class="btn-close" onclick="closeModal('addContractorModal')"></button>
-                </div>
-                <form id="addContractorForm" onsubmit="saveContractor(event)">
-                    <div class="form-group mb-3">
-                        <label class="form-label">الاسم بالكامل *</label>
-                        <input type="text" id="contractorName" class="form-control" required>
-                    </div>
-                    <div class="form-group mb-3">
-                        <label class="form-label">رقم الهاتف *</label>
-                        <input type="text" id="contractorPhone" class="form-control" required>
-                    </div>
-                    <div class="form-group mb-3">
-                        <label class="form-label">اسم الشركة</label>
-                        <input type="text" id="contractorCompany" class="form-control">
-                    </div>
-                    <div class="form-group mb-3">
-                        <label class="form-label">نوع العمل *</label>
-                        <select id="contractorType" class="form-control" required>
-                            <option value="">اختر النوع...</option>
-                            <option value="مقاول تشطيبات">مقاول تشطيبات</option>
-                            <option value="مطور عقاري">مطور عقاري</option>
-                            <option value="مقاول خرسانات">مقاول خرسانات</option>
-                            <option value="مكتب استشاري">مكتب استشاري</option>
-                        </select>
-                    </div>
-                    <div class="form-group mb-3">
-                        <label class="form-label">المشروع الحالي</label>
-                        <input type="text" id="contractorProject" class="form-control">
-                    </div>
-                    <div class="form-group mb-3">
-                        <label class="form-label">ملاحظات</label>
-                        <textarea id="contractorNotes" class="form-control" rows="2"></textarea>
-                    </div>
-                    <div class="d-flex justify-content-end gap-2">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('addContractorModal')">إلغاء</button>
-                        <button type="submit" class="btn btn-primary">حفظ البيانات</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- كود الـ JavaScript للربط وإدارة التنقل وسوبابيز -->
-    <script>
-        // مودال التحكم المفتوح في نظامكِ
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-        // نظام التنقل التلقائي الذكي المعتمد على data-section المتناسق مع الأزرار
-        document.querySelectorAll('.menu li').forEach(item => {
-            item.addEventListener('click', function() {
-                document.querySelectorAll('.menu li').forEach(i => i.classList.remove('active'));
-                this.classList.add('active');
-                
-                const targetSection = this.getAttribute('data-section');
-                document.querySelectorAll('.crm-section').forEach(s => s.style.display = 'none');
-                
-                const sectionEl = document.getElementById(targetSection);
-                if (sectionEl) sectionEl.style.display = 'block';
-                
-                if (targetSection === 'contractorsSection') loadContractors();
-            });
-        });
-
-        // دوال ربط سوبابيز وقسم المقاولين والمطورين
-        async function loadContractors() {
-            if(!window.supabase) return;
-            const { data, error } = await supabase.from('contractors').select('*').order('created_at', { ascending: false });
-            if (error) return console.error(error.message);
-
-            document.getElementById('totalContractorsCount').innerText = data.length;
-            const tbody = document.getElementById('contractorsTableBody');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">لا يوجد مقاولين مسجلين حالياً</td></tr>';
-                return;
-            }
-
-            data.forEach(item => {
-                tbody.innerHTML += `
+{
+  "name": "DELLA CRM",
+  "short_name": "DELLA",
+  "description": "نظام إدارة علاقات العملاء للعقارات - DELLA CRM",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#012d2d",
+  "theme_color": "#012d2d",
+  "orientation": "portrait",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
