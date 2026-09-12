@@ -325,8 +325,8 @@
                     <div class="card"><div class="card-title">مباع</div><div class="card-number" id="soldProperties">0</div></div>
                 </section>
                 <section class="workspace">
-                    <div class="toolbar"><h2>قائمة العقارات <span id="propertiesResultCount" style="color:#7a817e;font-size:13px;font-weight:normal"></span></h2></div>
-                    <div class="table-wrap"><table><thead><tr><th>العقار</th><th>المنطقة</th><th>المساحة</th><th>الغرف</th><th>السعر</th><th>السيلز</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="propertyRows"></tbody></table></div>
+                    <div class="toolbar"><h2>قائمة العقارات <span id="propertiesResultCount" style="color:#7a817e;font-size:13px;font-weight:normal"></span></h2><div class="filters"><select class="status-filter" id="propertyTypeFilter" aria-label="فلترة نوع العقار"><option value="">كل الأنواع</option><option value="apartment">شقق</option><option value="villa">فيلات</option><option value="land">أراضي</option><option value="mall">مولات/تجاري</option><option value="office">مكاتب</option></select></div></div>
+                    <div class="table-wrap"><table><thead><tr><th>العقار</th><th>النوع</th><th>المنطقة</th><th>المساحة</th><th>الغرف</th><th>السعر</th><th>السيلز</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="propertyRows"></tbody></table></div>
                 </section>
             </section>
             <section id="dealsSection" class="app-section">
@@ -539,6 +539,7 @@
             <div class="form-grid">
                 <input type="hidden" id="propertyId">
                 <div class="field"><label for="propertyTitle">اسم/عنوان العقار *</label><input id="propertyTitle" required></div>
+                <div class="field"><label for="propertyType">نوع العقار</label><select id="propertyType"><option value="apartment">شقة</option><option value="villa">فيلا</option><option value="land">أرض</option><option value="mall">مول/تجاري</option><option value="office">مكتب</option></select></div>
                 <div class="field"><label for="propertyCitySelect">المدينة</label><div style="display:flex;gap:6px;"><select id="propertyCitySelect" style="flex:1;"><option value="">اختاري مدينة</option></select><button type="button" class="secondary quick-add-city" data-target="propertyCitySelect" style="padding:8px 10px;">＋</button></div></div>
                 <div class="field"><label for="propertyDistrictSelect">المنطقة/الحي</label><div style="display:flex;gap:6px;"><select id="propertyDistrictSelect" style="flex:1;"><option value="">اختاري منطقة</option></select><button type="button" class="secondary quick-add-district" data-target="propertyDistrictSelect" data-city-select="propertyCitySelect" style="padding:8px 10px;">＋</button></div></div>
                 <div class="field"><label for="propertyArea">المساحة (م²)</label><input id="propertyArea" type="number" min="0"></div>
@@ -1414,23 +1415,31 @@
             if (error) throw error;
         }
 
+        const propertyTypeLabel = (type) => ({
+            apartment: 'شقة', villa: 'فيلا', land: 'أرض', mall: 'مول/تجاري', office: 'مكتب'
+        }[type] || type);
+
         function renderProperties() {
             $('totalProperties').textContent = properties.length;
             $('availableProperties').textContent = properties.filter(p => p.status === 'available').length;
             $('reservedProperties').textContent = properties.filter(p => p.status === 'reserved').length;
             $('soldProperties').textContent = properties.filter(p => p.status === 'sold').length;
-            $('propertiesResultCount').textContent = `(${properties.length})`;
 
-            $('propertyRows').innerHTML = properties.length ? properties.map(property => {
+            const typeFilter = $('propertyTypeFilter').value;
+            const filtered = typeFilter ? properties.filter(p => p.property_type === typeFilter) : properties;
+            $('propertiesResultCount').textContent = `(${filtered.length})`;
+
+            $('propertyRows').innerHTML = filtered.length ? filtered.map(property => {
                 const salesName = property.sales_id ? (salesTeam.find(s => s.id === property.sales_id)?.full_name || '—') : '—';
                 const cityName = cities.find(c => c.id === property.city_id)?.name;
                 const districtName = districts.find(d => d.id === property.district_id)?.name;
                 const locationLabel = [districtName, cityName].filter(Boolean).join(' - ') || '—';
                 return `<tr data-id="${property.id}">
                     <td>${property.title}</td>
+                    <td>${propertyTypeLabel(property.property_type)}</td>
                     <td>${locationLabel}</td>
                     <td>${property.area ? Number(property.area).toLocaleString('en-US') + ' م²' : '—'}</td>
-                    <td>${property.rooms ?? '—'}</td>
+                    <td>${property.property_type === 'land' ? '—' : (property.rooms ?? '—')}</td>
                     <td>${Number(property.price || 0).toLocaleString('en-US')} ر.س</td>
                     <td>${salesName}</td>
                     <td><span class="status ${property.status === 'sold' ? 'inactive' : ''}">${propertyStatusLabel(property.status)}</span></td>
@@ -1439,8 +1448,10 @@
                         <button class="icon-btn delete-property" data-id="${property.id}" aria-label="حذف ${property.title}" ${CURRENT_USER_ROLE !== 'admin' ? 'disabled' : ''}>⌫</button>
                     </div></td>
                 </tr>`;
-            }).join('') : '<tr><td class="empty" colspan="8">لا توجد بيانات عقارات</td></tr>';
+            }).join('') : '<tr><td class="empty" colspan="9">لا توجد بيانات عقارات</td></tr>';
         }
+
+        $('propertyTypeFilter').addEventListener('change', renderProperties);
 
         async function openPropertyModal(property) {
             $('propertyForm').reset();
@@ -1453,6 +1464,7 @@
                 cities.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
             if (property) {
                 $('propertyTitle').value = property.title || '';
+                $('propertyType').value = property.property_type || 'apartment';
                 $('propertyArea').value = property.area || '';
                 $('propertyRooms').value = property.rooms || '';
                 $('propertyPrice').value = property.price || '';
@@ -1510,6 +1522,7 @@
             }
             const data = {
                 title: $('propertyTitle').value.trim(),
+                property_type: $('propertyType').value,
                 city_id: $('propertyCitySelect').value ? Number($('propertyCitySelect').value) : null,
                 district_id: $('propertyDistrictSelect').value ? Number($('propertyDistrictSelect').value) : null,
                 area: Number($('propertyArea').value) || null,
