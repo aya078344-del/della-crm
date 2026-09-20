@@ -13,6 +13,8 @@
     <!-- إضافة جديدة: مكتبة Supabase                    -->
     <!-- ============================================= -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- مكتبة الرسوم البيانية للتقارير -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 
     <style>
         :root { --ink: #17201e; --muted: #7a817e; --cream: #f7f5f1; --panel: #fff; --line: #e9e6e0; --brown: #012d2d; --green: #18795d; --green-soft: #e5f3ed; --gold: #c98529; --gold-soft: #fbf1d8; }
@@ -125,6 +127,9 @@
         .login-box .field { margin-bottom: 14px; }
         .login-box .field label { display: block; margin-bottom: 6px; font-size: 13px; color: #59605d; }
         .login-box .field input { width: 100%; padding: 11px; border: 1px solid var(--line); border-radius: 8px; outline: none; }
+        .plan-radio-card { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 9px; cursor: pointer; }
+        .plan-radio-card input { margin-top: 3px; }
+        .plan-radio-card:has(input:checked) { border-color: var(--green); background: var(--green-soft); }
         .login-box .primary { width: 100%; margin-top: 8px; padding: 12px; }
         .login-error { display: none; padding: 10px 14px; margin-bottom: 14px; border-radius: 8px; font-size: 13px; color: #9a443d; background: #fbe9e7; }
         .login-error.show { display: block; }
@@ -195,27 +200,72 @@
             </p>
         </div>
 
-        <div class="login-box hidden" id="signupBox">
-            <div class="logo">تسجيل شركة جديدة</div>
+        <div class="login-box hidden" id="signupBox" style="width:min(480px,92%);">
+            <div class="logo">البدء باستخدام DELLA CRM</div>
             <div class="login-error" id="signupError"></div>
+            <div id="signupStepIndicator" style="text-align:center;color:#7a817e;font-size:13px;margin-bottom:14px;"></div>
             <form id="signupForm">
-                <div class="field">
-                    <label for="signupCompanyName">اسم الشركة</label>
-                    <input id="signupCompanyName" required>
+
+                <div class="signup-step" data-step="account">
+                    <div class="field">
+                        <label for="signupCompanyCode">كود دعوة الشركة (للسيلز الجدد فقط - سيبيه فاضي لو بتسجلي شركة جديدة)</label>
+                        <input id="signupCompanyCode" placeholder="مثال: A1B2C3" style="text-transform:uppercase;">
+                    </div>
+                    <div class="field" id="signupCompanyNameField">
+                        <label for="signupCompanyName">اسم الشركة</label>
+                        <input id="signupCompanyName">
+                    </div>
+                    <div class="field" id="signupEmployeeCountField">
+                        <label for="signupEmployeeCount">عدد الموظفين في الشركة</label>
+                        <input id="signupEmployeeCount" type="number" min="1" value="1">
+                    </div>
+                    <div class="field">
+                        <label for="signupFullName">اسمك الكامل</label>
+                        <input id="signupFullName" required>
+                    </div>
+                    <div class="field">
+                        <label for="signupEmail">البريد الإلكتروني</label>
+                        <input id="signupEmail" type="email" required autocomplete="username">
+                    </div>
+                    <div class="field">
+                        <label for="signupPassword">كلمة المرور</label>
+                        <input id="signupPassword" type="password" required minlength="6" autocomplete="new-password">
+                    </div>
                 </div>
-                <div class="field">
-                    <label for="signupFullName">اسمك الكامل</label>
-                    <input id="signupFullName" required>
+
+                <div class="signup-step" data-step="plan" style="display:none">
+                    <p style="color:#7a817e;font-size:13px;margin:0 0 14px;">اختاري الباقة المناسبة لشركتك</p>
+                    <div style="display:grid;gap:10px;">
+                        <label class="plan-radio-card"><input type="radio" name="signupPlan" value="single" data-price="100" data-max="1" checked><div><strong>Single (فردي) — 100 جنيه/شهر</strong><br><small style="color:#7a817e;">مستخدم واحد فقط</small></div></label>
+                        <label class="plan-radio-card"><input type="radio" name="signupPlan" value="basic" data-price="800" data-max="5"><div><strong>Basic (أساسية) — 800 جنيه/شهر</strong><br><small style="color:#7a817e;">حتى 5 مستخدمين</small></div></label>
+                        <label class="plan-radio-card"><input type="radio" name="signupPlan" value="pro" data-price="2000" data-max="15"><div><strong>Pro (احترافية) — 2000 جنيه/شهر</strong><br><small style="color:#7a817e;">حتى 15 مستخدم</small></div></label>
+                        <label class="plan-radio-card"><input type="radio" name="signupPlan" value="enterprise" data-price="0" data-max="999999"><div><strong>Enterprise (مؤسسات)</strong><br><small style="color:#7a817e;">عدد مستخدمين غير محدود - تواصلي معنا لتحديد السعر</small></div></label>
+                    </div>
                 </div>
-                <div class="field">
-                    <label for="signupEmail">البريد الإلكتروني</label>
-                    <input id="signupEmail" type="email" required autocomplete="username">
+
+                <div class="signup-step" data-step="payment" style="display:none">
+                    <div id="paymentNormalBox">
+                        <p style="color:#7a817e;font-size:13px;margin:0 0 14px;">اختاري طريقة الدفع وحوّلي قيمة الاشتراك (<strong id="signupPlanPriceLabel">100</strong> جنيه شهريًا)، وحسابك هيتفعّل خلال ساعات من تأكيد التحويل.</p>
+                        <div class="field">
+                            <label for="signupPaymentMethod">طريقة الدفع</label>
+                            <select id="signupPaymentMethod">
+                                <option value="vodafone_cash">فودافون كاش</option>
+                                <option value="instapay">إنستاباي</option>
+                                <option value="visa">فيزا/بطاقة</option>
+                            </select>
+                        </div>
+                        <div id="paymentInstructions" style="padding:14px;background:var(--cream);border-radius:9px;font-size:13px;color:#556;margin-top:6px;"></div>
+                    </div>
+                    <div id="paymentEnterpriseBox" style="display:none;padding:14px;background:var(--cream);border-radius:9px;font-size:13px;color:#556;">
+                        هنتواصل معاكي بعد التسجيل لتحديد السعر المناسب لشركتك حسب عدد المستخدمين.
+                    </div>
                 </div>
-                <div class="field">
-                    <label for="signupPassword">كلمة المرور</label>
-                    <input id="signupPassword" type="password" required minlength="6" autocomplete="new-password">
+
+                <div class="form-footer" style="display:flex;justify-content:space-between;">
+                    <button class="secondary" type="button" id="signupPrevBtn" style="display:none">→ السابق</button>
+                    <button class="primary" type="button" id="signupNextBtn">التالي ←</button>
+                    <button class="primary" type="submit" id="signupBtn" style="display:none">إنشاء الحساب والشركة</button>
                 </div>
-                <button class="primary" type="submit" id="signupBtn">إنشاء الحساب والشركة</button>
             </form>
             <p style="text-align:center;margin-top:16px;font-size:13px;color:#7a817e;">
                 عندك حساب بالفعل؟ <a href="#" id="showLoginLink" style="color:var(--green);font-weight:bold;text-decoration:none;">سجّلي دخول</a>
@@ -265,6 +315,7 @@
             <div class="logo">DELLA CRM</div>
             <ul class="menu">
                 <li class="active" data-section="customersSection">👥 العملاء</li>
+                <li data-section="ownersSection">🔑 الملاك</li>
                 <li data-section="leadsSection">📞 العملاء المحتملون</li>
                 <li data-section="propertiesSection">🏢 العقارات</li>
                 <li data-section="dealsSection">💰 الصفقات</li>
@@ -272,9 +323,11 @@
                 <li data-section="publishingSection">📣 النشر</li>
                 <li data-section="supportSection">🎧 خدمة العملاء والدعم الفني</li>
                 <li data-section="leaderboardSection">🏆 لوحة الصدارة</li>
+                <li data-section="reportsSection" id="reportsMenuItem">📊 التقارير والإحصائيات</li>
                 <li data-section="areasSection" id="areasMenuItem">📍 المدن والمناطق</li>
                 <li data-section="attendanceSection">🕐 الحضور والانصراف</li>
                 <li data-section="developersSection">🏗 المقاولين والمطورين</li>
+                <li data-section="planSection" id="planMenuItem">💳 الباقة والاشتراك</li>
             </ul>
         </aside>
         <main class="main">
@@ -289,11 +342,12 @@
                 <div class="card"><div class="card-title">عدد الشركات</div><div class="card-number" id="companyCount">0</div></div>
                 <div class="card"><div class="card-title">إجمالي البادجيت</div><div class="card-number currency" id="totalBudget">0</div></div>
                 <div class="card"><div class="card-title">عدد السيلز</div><div class="card-number" id="salesCount">0</div></div>
+                <div class="card"><div class="card-title">عملاء أولوية عالية 🔴</div><div class="card-number" id="highPriorityCount">0</div></div>
             </section>
             <section class="workspace">
                 <div class="toolbar"><h2>قائمة العملاء <span id="resultCount" style="color:#7a817e;font-size:13px;font-weight:normal"></span></h2><div class="filters"><input class="search" id="searchInput" type="search" placeholder="ابحث بالاسم أو البريد أو الهاتف" aria-label="البحث عن عميل"><select class="status-filter" id="statusFilter" aria-label="فلترة حالة العميل"><option value="">كل الحالات</option><option value="active">نشط</option><option value="inactive">غير نشط</option></select></div></div>
                 <div class="sales-summary" id="salesSummary"></div>
-                <div class="table-wrap"><table><thead><tr><th>العميل</th><th>الهاتف</th><th>الشركة</th><th>الميزانية</th><th>السيلز المسؤول</th><th>آخر تواصل</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="customerRows"></tbody></table></div>
+                <div class="table-wrap"><table><thead><tr><th>العميل</th><th>الهاتف</th><th>الشركة</th><th>الميزانية</th><th>السيلز المسؤول</th><th>آخر تواصل</th><th>الحالة</th><th>الأولوية</th><th>إجراءات</th></tr></thead><tbody id="customerRows"></tbody></table></div>
                 <div class="details" id="customerDetails"></div>
             </section>
             </section>
@@ -311,6 +365,22 @@
                 <section class="workspace">
                     <div class="toolbar"><h2>قائمة العملاء المحتملين <span id="leadsResultCount" style="color:#7a817e;font-size:13px;font-weight:normal"></span></h2></div>
                     <div class="table-wrap"><table><thead><tr><th>الاسم</th><th>الهاتف</th><th>الشركة</th><th>الميزانية</th><th>السيلز</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="leadRows"></tbody></table></div>
+                </section>
+            </section>
+            <section id="ownersSection" class="app-section">
+                <header class="header">
+                    <div><h1>الملاك</h1><p>تابعي ملاك العقارات وحالة التحقق منهم وعلاقتك بيهم</p></div>
+                    <button class="primary" id="addOwner">＋ إضافة مالك</button>
+                </header>
+                <section class="cards" aria-label="إحصائيات الملاك">
+                    <div class="card"><div class="card-title">إجمالي الملاك</div><div class="card-number" id="totalOwners">0</div></div>
+                    <div class="card"><div class="card-title">تم التحقق منهم</div><div class="card-number" id="verifiedOwners">0</div></div>
+                    <div class="card"><div class="card-title">قيد المراجعة</div><div class="card-number" id="pendingOwners">0</div></div>
+                    <div class="card"><div class="card-title">عدد العقارات المرتبطة</div><div class="card-number" id="linkedPropertiesOwners">0</div></div>
+                </section>
+                <section class="workspace">
+                    <div class="toolbar"><h2>قائمة الملاك <span id="ownersResultCount" style="color:#7a817e;font-size:13px;font-weight:normal"></span></h2><div class="filters"><input class="search" id="ownerSearchInput" type="search" placeholder="ابحث بالاسم أو الهاتف" aria-label="البحث عن مالك"><select class="status-filter" id="ownerVerificationFilter" aria-label="فلترة حالة التحقق"><option value="">كل الحالات</option><option value="verified">تم التحقق</option><option value="pending">قيد المراجعة</option><option value="rejected">مرفوض</option></select></div></div>
+                    <div class="table-wrap"><table><thead><tr><th>المالك</th><th>الهاتف</th><th>المدينة</th><th>مصدر التعرف</th><th>درجة العلاقة</th><th>حالة التحقق</th><th>إجراءات</th></tr></thead><tbody id="ownerRows"></tbody></table></div>
                 </section>
             </section>
             <section id="propertiesSection" class="app-section">
@@ -366,6 +436,14 @@
                     <div><h1>النشر</h1><p>جهّزي منشورات العقارات وتابعي حالتها قبل نشرها</p></div>
                     <button class="primary" id="addPost">＋ إنشاء منشور</button>
                 </header>
+                <section class="workspace" id="facebookConnectPanel" style="margin-bottom:18px;">
+                    <div class="toolbar"><h2>ربط صفحة فيسبوك</h2></div>
+                    <div style="padding:21px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+                        <div id="facebookConnectionStatus" style="color:#7a817e;font-size:13px;">جاري التحقق من حالة الربط...</div>
+                        <button class="primary" type="button" id="connectFacebookBtn" style="display:none;">ربط صفحة فيسبوك</button>
+                        <button class="secondary" type="button" id="disconnectFacebookBtn" style="display:none;">قطع الاتصال</button>
+                    </div>
+                </section>
                 <section class="cards" aria-label="إحصائيات النشر">
                     <div class="card"><div class="card-title">إجمالي المنشورات</div><div class="card-number" id="totalPosts">0</div></div>
                     <div class="card"><div class="card-title">مسودات</div><div class="card-number" id="draftPosts">0</div></div>
@@ -400,6 +478,44 @@
                 <section class="workspace">
                     <div class="toolbar"><h2>الترتيب</h2></div>
                     <div class="table-wrap"><table><thead><tr><th>الترتيب</th><th>الاسم</th><th>النقاط</th></tr></thead><tbody id="leaderboardRows"></tbody></table></div>
+                </section>
+            </section>
+            <section id="reportsSection" class="app-section">
+                <header class="header">
+                    <div><h1>التقارير والإحصائيات</h1><p>نظرة عامة على أداء شركتك: العملاء، الصفقات، والمبيعات</p></div>
+                    <div class="actions">
+                        <select id="reportsPeriodFilter" style="padding:9px 12px;border:1px solid var(--line);border-radius:8px;">
+                            <option value="all">كل الفترات</option>
+                            <option value="30">آخر 30 يوم</option>
+                            <option value="7">آخر 7 أيام</option>
+                        </select>
+                    </div>
+                </header>
+                <section class="cards" aria-label="إحصائيات عامة">
+                    <div class="card"><div class="card-title">إجمالي العملاء</div><div class="card-number" id="reportTotalCustomers">0</div></div>
+                    <div class="card"><div class="card-title">إجمالي الصفقات</div><div class="card-number" id="reportTotalDeals">0</div></div>
+                    <div class="card"><div class="card-title">قيمة الصفقات الفائزة</div><div class="card-number currency" id="reportWonValue">0</div></div>
+                    <div class="card"><div class="card-title">نسبة التحويل</div><div class="card-number" id="reportConversionRate">0%</div></div>
+                    <div class="card"><div class="card-title">متوسط قيمة الصفقة</div><div class="card-number currency" id="reportAvgDealValue">0</div></div>
+                    <div class="card"><div class="card-title">إجمالي العقارات المتاحة</div><div class="card-number" id="reportTotalProperties">0</div></div>
+                </section>
+                <section class="workspace" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px;">
+                    <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;">
+                        <h3 style="margin:0 0 12px;font-size:15px;">عملاء جدد شهرياً (آخر 6 شهور)</h3>
+                        <canvas id="chartCustomersMonthly" height="220"></canvas>
+                    </div>
+                    <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;">
+                        <h3 style="margin:0 0 12px;font-size:15px;">توزيع العملاء حسب الأولوية</h3>
+                        <canvas id="chartCustomersPriority" height="220"></canvas>
+                    </div>
+                    <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;">
+                        <h3 style="margin:0 0 12px;font-size:15px;">حالة الصفقات</h3>
+                        <canvas id="chartDealsStage" height="220"></canvas>
+                    </div>
+                    <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;">
+                        <h3 style="margin:0 0 12px;font-size:15px;">أفضل 5 سيلز (بقيمة الصفقات الفائزة)</h3>
+                        <canvas id="chartTopSales" height="220"></canvas>
+                    </div>
                 </section>
             </section>
             <section id="areasSection" class="app-section">
@@ -453,6 +569,30 @@
                 <section class="workspace">
                     <div class="toolbar"><h2>القائمة <span id="developersResultCount" style="color:#7a817e;font-size:13px;font-weight:normal"></span></h2></div>
                     <div class="table-wrap"><table><thead><tr><th>الاسم</th><th>النوع</th><th>الهاتف</th><th>مسؤول التواصل</th><th>إجراءات</th></tr></thead><tbody id="developerRows"></tbody></table></div>
+                </section>
+            </section>
+            <section id="planSection" class="app-section">
+                <header class="header">
+                    <div><h1>الباقة والاشتراك</h1><p>تفاصيل باقتك الحالية وعدد المستخدمين المسموح بيهم</p></div>
+                </header>
+                <section class="cards" aria-label="تفاصيل الباقة">
+                    <div class="card"><div class="card-title">الباقة الحالية</div><div class="card-number" id="currentPlanName">—</div></div>
+                    <div class="card"><div class="card-title">المستخدمون المستخدمون</div><div class="card-number" id="usersUsedCount">0</div></div>
+                    <div class="card"><div class="card-title">الحد الأقصى المسموح</div><div class="card-number" id="usersMaxCount">—</div></div>
+                </section>
+                <section class="workspace">
+                    <div class="toolbar"><h2>دعوة سيلز جديد للشركة</h2></div>
+                    <div style="padding:21px;">
+                        <p style="margin:0 0 12px;color:#7a817e;font-size:13px;">ابعتي كود الدعوة ده لأي سيلز جديد عايزة تضيفيه — هو هيسجل حساب جديد ويحط الكود ده في فورم التسجيل عشان ينضم لشركتك تلقائيًا كـ"سيلز".</p>
+                        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                            <div class="card-number" id="companyInviteCode" style="letter-spacing:3px;">——————</div>
+                            <button class="secondary" type="button" id="copyCompanyCodeBtn">نسخ الكود</button>
+                        </div>
+                    </div>
+                </section>
+                <section class="workspace">
+                    <div class="toolbar"><h2>ترقية الباقة</h2></div>
+                    <p style="padding:21px;color:#7a817e;font-size:13px;">لترقية باقتك أو تغييرها، تواصلي معنا واتساب على <a class="contact-link" href="https://wa.me/201010778170" target="_blank">01010778170</a> وهنساعدك تختاري الباقة المناسبة وطريقة الدفع.</p>
                 </section>
             </section>
         </main>
@@ -546,6 +686,7 @@
                 <div class="field"><label for="propertyRooms">عدد الغرف</label><input id="propertyRooms" type="number" min="0"></div>
                 <div class="field"><label for="propertyPrice">السعر</label><input id="propertyPrice" type="number" min="0"></div>
                 <div class="field"><label for="propertySalesSelect">السيلز المسؤول</label><select id="propertySalesSelect"><option value="">بدون تحديد</option></select></div>
+                <div class="field"><label for="propertyOwnerSelect">مالك العقار</label><select id="propertyOwnerSelect"><option value="">بدون تحديد</option></select></div>
                 <div class="field"><label for="propertyFinishStatus">حالة التشطيب</label><select id="propertyFinishStatus"><option value="unfinished">غير مشطب</option><option value="semi_finished">نصف تشطيب</option><option value="finished">تشطيب كامل</option></select></div>
                 <div class="field"><label for="propertyStatus">حالة العقار</label><select id="propertyStatus"><option value="available">متاح</option><option value="reserved">محجوز</option><option value="sold">مباع</option></select></div>
                 <div class="field full"><label for="propertyNotes">ملاحظات</label><textarea id="propertyNotes" placeholder="أضف ملاحظات عن العقار..."></textarea></div>
@@ -569,9 +710,50 @@
         </form>
     </div>
     <div class="modal" id="customerModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <form class="modal-box" id="customerForm" novalidate><div class="modal-head"><h2 id="modalTitle">إضافة عميل جديد</h2><button type="button" class="close" id="closeModal" aria-label="إغلاق">×</button></div>
-            <div class="form-grid"><input type="hidden" id="customerId"><div class="field"><label for="name">اسم العميل *</label><input id="name" required></div><div class="field"><label for="phone">رقم الهاتف *</label><input id="phone" type="tel" required></div><div class="field"><label for="company">اسم الشركة *</label><input id="company" required></div><div class="field"><label for="budget">الميزانية *</label><input id="budget" type="number" min="0" required></div><div class="field"><label for="whatsapp">رقم الواتساب *</label><input id="whatsapp" type="tel" required></div><div class="field"><label for="salesSelect">السيلز المسؤول</label><select id="salesSelect"><option value="">بدون تحديد</option></select></div><div class="field"><label for="customerCitySelect">المدينة المطلوبة</label><div style="display:flex;gap:6px;"><select id="customerCitySelect" style="flex:1;"><option value="">اختاري مدينة</option></select><button type="button" class="secondary quick-add-city" data-target="customerCitySelect" style="padding:8px 10px;">＋</button></div></div><div class="field"><label for="customerDistrictSelect">المنطقة/الحي</label><div style="display:flex;gap:6px;"><select id="customerDistrictSelect" style="flex:1;"><option value="">اختاري منطقة</option></select><button type="button" class="secondary quick-add-district" data-target="customerDistrictSelect" data-city-select="customerCitySelect" style="padding:8px 10px;">＋</button></div></div><div class="field"><label for="status">الحالة</label><select id="status"><option value="active">نشط</option><option value="inactive">غير نشط</option></select></div><div class="field full"><label for="details">التفاصيل</label><textarea id="details" placeholder="أضف تفاصيل العميل..."></textarea></div><div class="field full"><label for="notes">ملاحظات</label><textarea id="notes" placeholder="أضف ملاحظة عن العميل..."></textarea></div></div>
-            <div class="form-footer"><button class="primary" type="submit" id="saveCustomerBtn">حفظ العميل</button><button class="secondary" type="button" id="cancelModal">إلغاء</button></div>
+        <form class="modal-box" id="customerForm" novalidate>
+            <div class="modal-head"><h2 id="modalTitle">إضافة عميل جديد</h2><button type="button" class="close" id="closeModal" aria-label="إغلاق">×</button></div>
+            <div id="stepIndicator" style="padding:0 21px 12px;color:#7a817e;font-size:13px;font-weight:bold;"></div>
+            <input type="hidden" id="customerId">
+
+            <div class="form-grid form-step" data-step="1">
+                <div class="field"><label for="name">اسم العميل *</label><input id="name" required></div>
+                <div class="field"><label for="phone">رقم الهاتف *</label><input id="phone" type="tel" required></div>
+                <div class="field"><label for="whatsapp">رقم الواتساب *</label><input id="whatsapp" type="tel" required></div>
+                <div class="field"><label for="email">البريد الإلكتروني</label><input id="email" type="email"></div>
+                <div class="field"><label for="company">اسم الشركة *</label><input id="company" required></div>
+            </div>
+
+            <div class="form-grid form-step" data-step="2" style="display:none">
+                <div class="field"><label for="purpose">الغرض</label><select id="purpose"><option value="buy">شراء</option><option value="rent">إيجار</option></select></div>
+                <div class="field"><label for="desiredPropertyType">نوع العقار المطلوب</label><select id="desiredPropertyType"><option value="apartment">شقة</option><option value="villa">فيلا</option><option value="land">أرض</option><option value="mall">مول/تجاري</option><option value="office">مكتب</option></select></div>
+                <div class="field full"><label for="details">تفاصيل الاحتياج</label><textarea id="details" placeholder="أضف تفاصيل عن احتياج العميل..."></textarea></div>
+            </div>
+
+            <div class="form-grid form-step" data-step="3" style="display:none">
+                <div class="field"><label for="budget">الميزانية *</label><input id="budget" type="number" min="0" required></div>
+                <div class="field"><label for="paymentMethod">طريقة الدفع</label><select id="paymentMethod"><option value="cash">كاش</option><option value="installment">تقسيط</option></select></div>
+            </div>
+
+            <div class="form-grid form-step" data-step="4" style="display:none">
+                <div class="field"><label for="customerCitySelect">المدينة المطلوبة</label><div style="display:flex;gap:6px;"><select id="customerCitySelect" style="flex:1;"><option value="">اختاري مدينة</option></select><button type="button" class="secondary quick-add-city" data-target="customerCitySelect" style="padding:8px 10px;">＋</button></div></div>
+                <div class="field"><label for="customerDistrictSelect">المنطقة/الحي</label><div style="display:flex;gap:6px;"><select id="customerDistrictSelect" style="flex:1;"><option value="">اختاري منطقة</option></select><button type="button" class="secondary quick-add-district" data-target="customerDistrictSelect" data-city-select="customerCitySelect" style="padding:8px 10px;">＋</button></div></div>
+                <div class="field"><label for="desiredArea">المساحة المطلوبة (م²)</label><input id="desiredArea" type="number" min="0"></div>
+                <div class="field"><label for="desiredRooms">عدد الغرف المطلوب</label><input id="desiredRooms" type="number" min="0"></div>
+            </div>
+
+            <div class="form-grid form-step" data-step="5" style="display:none">
+                <div class="field"><label for="salesSelect">السيلز المسؤول</label><select id="salesSelect"><option value="">بدون تحديد</option></select></div>
+                <div class="field"><label for="status">الحالة</label><select id="status"><option value="active">نشط</option><option value="inactive">غير نشط</option></select></div>
+                <div class="field"><label for="leadScore">درجة جدية العميل (0-100)</label><input id="leadScore" type="number" min="0" max="100" value="50"></div>
+                <div class="field full"><label for="notes">ملاحظات</label><textarea id="notes" placeholder="أضف ملاحظة عن العميل..."></textarea></div>
+            </div>
+
+            <div class="form-footer">
+                <button class="secondary" type="button" id="prevStepBtn" style="display:none">→ السابق</button>
+                <button class="primary" type="button" id="nextStepBtn">التالي ←</button>
+                <button class="primary" type="submit" id="saveCustomerBtn" style="display:none">حفظ العميل</button>
+                <button class="secondary" type="button" id="cancelModal">إلغاء</button>
+            </div>
         </form>
     </div>
     <div class="modal" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
@@ -587,6 +769,45 @@
                     <button class="primary" type="submit">＋ إضافة متابعة</button>
                 </form>
                 <div class="followup-list" id="followupList"></div>
+            </section>
+        </div>
+    </div>
+    <div class="modal" id="ownerModal" role="dialog" aria-modal="true" aria-labelledby="ownerModalTitle">
+        <form class="modal-box" id="ownerForm" novalidate><div class="modal-head"><h2 id="ownerModalTitle">إضافة مالك جديد</h2><button type="button" class="close" id="closeOwnerModal" aria-label="إغلاق">×</button></div>
+            <div class="form-grid">
+                <input type="hidden" id="ownerId">
+                <div class="field"><label for="ownerName">اسم المالك *</label><input id="ownerName" required></div>
+                <div class="field"><label for="ownerPhone">رقم الهاتف *</label><input id="ownerPhone" type="tel" required></div>
+                <div class="field"><label for="ownerWhatsapp">رقم الواتساب</label><input id="ownerWhatsapp" type="tel"></div>
+                <div class="field"><label for="ownerEmail">البريد الإلكتروني</label><input id="ownerEmail" type="email"></div>
+                <div class="field"><label for="ownerCitySelect">المدينة</label><div style="display:flex;gap:6px;"><select id="ownerCitySelect" style="flex:1;"><option value="">اختاري مدينة</option></select><button type="button" class="secondary quick-add-city" data-target="ownerCitySelect" style="padding:8px 10px;">＋</button></div></div>
+                <div class="field"><label for="ownerDistrictSelect">المنطقة/الحي</label><div style="display:flex;gap:6px;"><select id="ownerDistrictSelect" style="flex:1;"><option value="">اختاري منطقة</option></select><button type="button" class="secondary quick-add-district" data-target="ownerDistrictSelect" data-city-select="ownerCitySelect" style="padding:8px 10px;">＋</button></div></div>
+                <div class="field"><label for="ownerSalesSelect">السيلز المسؤول</label><select id="ownerSalesSelect"><option value="">بدون تحديد</option></select></div>
+                <div class="field"><label for="ownerSource">مصدر التعرف عليه</label><input id="ownerSource" placeholder="مثال: إعلان، توصية، اتصال مباشر..."></div>
+                <div class="field"><label for="ownerVerificationStatus">حالة التحقق</label><select id="ownerVerificationStatus"><option value="pending">قيد المراجعة</option><option value="verified">تم التحقق</option><option value="rejected">مرفوض</option></select></div>
+                <div class="field"><label for="ownerRelationshipScore">درجة العلاقة (0-100)</label><input id="ownerRelationshipScore" type="number" min="0" max="100" value="50"></div>
+                <div class="field full"><label for="ownerNotes">ملاحظات</label><textarea id="ownerNotes" placeholder="أضف ملاحظات عن المالك..."></textarea></div>
+            </div>
+            <div class="form-footer"><button class="primary" type="submit" id="saveOwnerBtn">حفظ المالك</button><button class="secondary" type="button" id="cancelOwnerModal">إلغاء</button></div>
+        </form>
+    </div>
+    <div class="modal" id="ownerDetailModal" role="dialog" aria-modal="true" aria-labelledby="ownerDetailModalTitle">
+        <div class="modal-box detail-modal-box">
+            <div class="modal-head"><h2 id="ownerDetailModalTitle">تفاصيل المالك</h2><button type="button" class="close" id="closeOwnerDetailModal" aria-label="إغلاق">×</button></div>
+            <div id="ownerDetailModalContent"></div>
+            <section class="detail-section">
+                <h3>العقارات المرتبطة بهذا المالك</h3>
+                <div id="ownerPropertiesList"></div>
+            </section>
+            <section class="detail-section">
+                <h3>سجل المتابعة والتواصل</h3>
+                <form class="followup-form" id="ownerFollowupForm">
+                    <div class="field"><label for="ownerFollowupDate">التاريخ</label><input id="ownerFollowupDate" type="date" required></div>
+                    <div class="field"><label for="ownerFollowupType">نوع التواصل</label><select id="ownerFollowupType"><option>مكالمة هاتفية</option><option>واتساب</option><option>بريد إلكتروني</option><option>اجتماع</option><option>أخرى</option></select></div>
+                    <div class="field"><label for="ownerFollowupNotes">ملاحظات المتابعة</label><textarea id="ownerFollowupNotes" required placeholder="اكتب ملخص المتابعة..."></textarea></div>
+                    <button class="primary" type="submit">＋ إضافة متابعة</button>
+                </form>
+                <div class="followup-list" id="ownerFollowupList"></div>
             </section>
         </div>
     </div>
@@ -614,6 +835,8 @@
         const initials = (name) => (name || '').split(' ').slice(0, 2).map(word => word[0]).join('');
         const formatBudget = (budget) => `${Number(budget || 0).toLocaleString('en-US')} ر.س`;
         const statusLabel = (status) => status === 'active' ? 'نشط' : 'غير نشط';
+        const leadPriorityLabel = (score) => { const s = Number(score ?? 50); return s >= 70 ? '🔴 عالية' : s >= 40 ? '🟡 متوسطة' : '🟢 منخفضة'; };
+        const leadPriorityKey = (score) => { const s = Number(score ?? 50); return s >= 70 ? 'high' : s >= 40 ? 'medium' : 'low'; };
 
         // =====================================================
         // تحميل العملاء من Supabase
@@ -691,15 +914,16 @@
             $('companyCount').textContent = companies.size;
             $('totalBudget').textContent = `${totalBudget.toLocaleString('en-US')}`;
             $('salesCount').textContent = Object.keys(sales).filter(name => name !== 'غير محدد').length;
-            $('salesSummary').innerHTML = `<h3 class="sales-title">العملاء حسب كل Sales</h3>${Object.entries(sales).length ? Object.entries(sales).sort(([, first], [, second]) => second - first).map(([name, count]) => `<div class="sales-item"><span>${name}</span><strong>${count} عميل</strong></div>`).join('') : '<div class="empty" style="grid-column:1/-1;padding:14px">لا توجد بيانات Sales</div>'}`;
+            $('highPriorityCount').textContent = customers.filter(c => leadPriorityKey(c.lead_score) === 'high').length;
+            $('salesSummary').innerHTML = `${Object.entries(sales).length ? Object.entries(sales).sort(([, first], [, second]) => second - first).map(([name, count]) => `<div class="sales-item"><span>${name}</span><strong>${count} عميل</strong></div>`).join('') : ''}`;
             $('customerRows').innerHTML = filtered.length ? filtered.map(customer => {
                 const salesName = customer.sales_id ? (salesTeam.find(s => s.id === customer.sales_id)?.full_name || '—') : '—';
-                return `<tr class="${customer.id === selectedId ? 'selected' : ''}" data-id="${customer.id}"><td><div class="customer-name"><span class="avatar">${initials(customer.name)}</span>${customer.name}</div></td><td><a class="contact-link" href="tel:${(customer.phone || '').replace(/\s/g, '')}">${customer.phone || '—'}</a></td><td>${customer.company || '—'}</td><td>${Number(customer.budget || 0).toLocaleString('en-US')} ر.س</td><td>${salesName}</td><td>${customer.last_contact || '—'}</td><td><span class="status ${customer.status === 'active' ? '' : 'inactive'}">${statusLabel(customer.status)}</span></td><td><div class="actions"><button class="icon-btn edit" data-id="${customer.id}" aria-label="تعديل ${customer.name}">✎</button><button class="icon-btn delete" data-id="${customer.id}" aria-label="حذف ${customer.name}">⌫</button></div></td></tr>`;
-            }).join('') : '<tr><td class="empty" colspan="8">لا توجد نتائج</td></tr>';
+                return `<tr class="${customer.id === selectedId ? 'selected' : ''}" data-id="${customer.id}"><td><div class="customer-name"><span class="avatar">${initials(customer.name)}</span>${customer.name}</div></td><td><a class="contact-link" href="tel:${(customer.phone || '').replace(/\s/g, '')}">${customer.phone || '—'}</a></td><td>${customer.company || '—'}</td><td>${Number(customer.budget || 0).toLocaleString('en-US')} ر.س</td><td>${salesName}</td><td>${customer.last_contact || '—'}</td><td><span class="status ${customer.status === 'active' ? '' : 'inactive'}">${statusLabel(customer.status)}</span></td><td>${leadPriorityLabel(customer.lead_score)}</td><td><div class="actions"><button class="icon-btn edit" data-id="${customer.id}" aria-label="تعديل ${customer.name}">✎</button><button class="icon-btn delete" data-id="${customer.id}" aria-label="حذف ${customer.name}">⌫</button></div></td></tr>`;
+            }).join('') : '<tr><td class="empty" colspan="9">لا توجد نتائج</td></tr>';
             const selected = filtered.find(customer => customer.id === selectedId) || filtered[0];
             if (selected) {
                 selectedId = selected.id;
-                $('customerDetails').innerHTML = `<div><h3>تفاصيل العميل</h3><div class="detail-profile"><span class="avatar">${initials(selected.name)}</span><div><strong>${selected.name}</strong><small>${selected.company || '—'} · ${statusLabel(selected.status)}</small></div></div><div class="detail-list"><div><span>رقم الهاتف</span><b><a class="contact-link" href="tel:${(selected.phone || '').replace(/\s/g, '')}">${selected.phone || '—'}</a></b></div><div><span>رقم الواتساب</span><b><a class="contact-link" href="https://wa.me/${(selected.whatsapp || '').replace(/\D/g, '')}" target="_blank">${selected.whatsapp || '—'}</a></b></div><div><span>الميزانية</span><b>${Number(selected.budget || 0).toLocaleString('en-US')} ر.س</b></div><div><span>اسم السيلز</span><b>${selected.sales_id ? (salesTeam.find(s => s.id === selected.sales_id)?.full_name || '—') : '—'}</b></div><div><span>البريد الإلكتروني</span><b>${selected.email || '—'}</b></div></div></div><div class="activity"><h3>التفاصيل والملاحظات</h3><p>${selected.details || 'لا توجد تفاصيل مسجلة.'}<time>${selected.notes || 'لا توجد ملاحظات مسجلة.'} · ${selected.last_contact || ''}</time></p></div>`;
+                $('customerDetails').innerHTML = `<div><h3>تفاصيل العميل</h3><div class="detail-profile"><span class="avatar">${initials(selected.name)}</span><div><strong>${selected.name}</strong><small>${selected.company || '—'} · ${statusLabel(selected.status)} · ${leadPriorityLabel(selected.lead_score)}</small></div></div><div class="detail-list"><div><span>درجة جدية العميل</span><b>${selected.lead_score ?? 50} / 100</b></div><div><span>رقم الهاتف</span><b><a class="contact-link" href="tel:${(selected.phone || '').replace(/\s/g, '')}">${selected.phone || '—'}</a></b></div><div><span>رقم الواتساب</span><b><a class="contact-link" href="https://wa.me/${(selected.whatsapp || '').replace(/\D/g, '')}" target="_blank">${selected.whatsapp || '—'}</a></b></div><div><span>الميزانية</span><b>${Number(selected.budget || 0).toLocaleString('en-US')} ر.س</b></div><div><span>اسم السيلز</span><b>${selected.sales_id ? (salesTeam.find(s => s.id === selected.sales_id)?.full_name || '—') : '—'}</b></div><div><span>البريد الإلكتروني</span><b>${selected.email || '—'}</b></div></div></div><div class="activity"><h3>التفاصيل والملاحظات</h3><p>${selected.details || 'لا توجد تفاصيل مسجلة.'}<time>${selected.notes || 'لا توجد ملاحظات مسجلة.'} · ${selected.last_contact || ''}</time></p></div>`;
             } else {
                 $('customerDetails').innerHTML = '<div class="empty" style="grid-column:1/-1">اختر عميلاً لعرض تفاصيله</div>';
             }
@@ -708,7 +932,7 @@
         function openDetailModal(customer) {
             selectedId = customer.id;
             $('detailModalTitle').textContent = `تفاصيل العميل: ${customer.name}`;
-            $('detailModalContent').innerHTML = `<div class="detail-profile"><span class="avatar">${initials(customer.name)}</span><div><strong>${customer.name}</strong><small>${statusLabel(customer.status)} · ${customer.company || '—'}</small></div></div><div class="detail-actions"><a class="contact-button" href="tel:${(customer.phone || '').replace(/\s/g, '')}">☎ اتصال</a><a class="contact-button whatsapp" href="https://wa.me/${(customer.whatsapp || '').replace(/\D/g, '')}" target="_blank">◉ واتساب</a></div><div class="detail-list"><div><span>اسم العميل</span><b>${customer.name}</b></div><div><span>اسم السيلز</span><b>${customer.sales_id ? (salesTeam.find(s => s.id === customer.sales_id)?.full_name || '—') : '—'}</b></div><div><span>رقم الهاتف</span><b>${customer.phone || '—'}</b></div><div><span>اسم الشركة</span><b>${customer.company || '—'}</b></div><div><span>الميزانية</span><b>${Number(customer.budget || 0).toLocaleString('en-US')} ر.س</b></div><div><span>رقم الواتساب</span><b>${customer.whatsapp || '—'}</b></div><div><span>التفاصيل</span><b>${customer.details || '—'}</b></div><div><span>الملاحظات</span><b>${customer.notes || '—'}</b></div></div>`;
+            $('detailModalContent').innerHTML = `<div class="detail-profile"><span class="avatar">${initials(customer.name)}</span><div><strong>${customer.name}</strong><small>${statusLabel(customer.status)} · ${customer.company || '—'} · ${leadPriorityLabel(customer.lead_score)}</small></div></div><div class="detail-actions"><a class="contact-button" href="tel:${(customer.phone || '').replace(/\s/g, '')}">☎ اتصال</a><a class="contact-button whatsapp" href="https://wa.me/${(customer.whatsapp || '').replace(/\D/g, '')}" target="_blank">◉ واتساب</a></div><div class="detail-list"><div><span>اسم العميل</span><b>${customer.name}</b></div><div><span>اسم السيلز</span><b>${customer.sales_id ? (salesTeam.find(s => s.id === customer.sales_id)?.full_name || '—') : '—'}</b></div><div><span>رقم الهاتف</span><b>${customer.phone || '—'}</b></div><div><span>اسم الشركة</span><b>${customer.company || '—'}</b></div><div><span>الميزانية</span><b>${Number(customer.budget || 0).toLocaleString('en-US')} ر.س</b></div><div><span>رقم الواتساب</span><b>${customer.whatsapp || '—'}</b></div><div><span>التفاصيل</span><b>${customer.details || '—'}</b></div><div><span>الملاحظات</span><b>${customer.notes || '—'}</b></div></div>`;
             $('followupDate').value = new Date().toISOString().slice(0, 10);
             renderFollowups(customer);
             $('detailModal').classList.add('open');
@@ -718,6 +942,46 @@
             $('followupList').innerHTML = followUps.length ? followUps.slice().reverse().map(followUp => `<article class="followup-item"><strong>${followUp.type}</strong><p>${followUp.notes}</p><time>${followUp.date}</time></article>`).join('') : '<div class="empty" style="padding:18px">لا توجد متابعات مسجلة لهذا العميل</div>';
         }
         function closeDetailModal() { $('detailModal').classList.remove('open'); }
+        // =====================================================
+        // فورم إضافة العميل متعدد الخطوات (5 خطوات)
+        // =====================================================
+        const customerStepTitles = { 1: 'بيانات العميل', 2: 'احتياج العميل', 3: 'الميزانية', 4: 'مواصفات العقار المطلوب', 5: 'نية الشراء' };
+        const CUSTOMER_TOTAL_STEPS = 5;
+        let currentCustomerStep = 1;
+
+        function goToCustomerStep(step) {
+            currentCustomerStep = step;
+            document.querySelectorAll('#customerForm .form-step').forEach(el => {
+                el.style.display = Number(el.dataset.step) === step ? '' : 'none';
+            });
+            $('stepIndicator').textContent = `الخطوة ${step} من ${CUSTOMER_TOTAL_STEPS}: ${customerStepTitles[step]}`;
+            $('prevStepBtn').style.display = step === 1 ? 'none' : '';
+            $('nextStepBtn').style.display = step === CUSTOMER_TOTAL_STEPS ? 'none' : '';
+            $('saveCustomerBtn').style.display = step === CUSTOMER_TOTAL_STEPS ? '' : 'none';
+        }
+
+        function validateCustomerStep(step) {
+            if (step === 1) {
+                if (!$('name').value.trim() || !$('phone').value.trim() || !$('whatsapp').value.trim() || !$('company').value.trim()) {
+                    showMessage('يرجى تعبئة جميع الحقول الإلزامية (*)', 'error');
+                    return false;
+                }
+            }
+            if (step === 3 && !$('budget').value) {
+                showMessage('يرجى إدخال الميزانية', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        $('nextStepBtn').addEventListener('click', () => {
+            if (!validateCustomerStep(currentCustomerStep)) return;
+            if (currentCustomerStep < CUSTOMER_TOTAL_STEPS) goToCustomerStep(currentCustomerStep + 1);
+        });
+        $('prevStepBtn').addEventListener('click', () => {
+            if (currentCustomerStep > 1) goToCustomerStep(currentCustomerStep - 1);
+        });
+
         async function openModal(customer) {
             $('customerForm').reset();
             $('customerId').value = customer ? customer.id : '';
@@ -726,7 +990,8 @@
             $('customerCitySelect').innerHTML = '<option value="">اختاري مدينة</option>' +
                 cities.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
             if (customer) {
-                $('name').value = customer.name || ''; $('phone').value = customer.phone || ''; $('company').value = customer.company || ''; $('budget').value = customer.budget || ''; $('whatsapp').value = customer.whatsapp || ''; $('salesSelect').value = customer.sales_id || ''; $('status').value = customer.status || 'active'; $('details').value = customer.details || ''; $('notes').value = customer.notes || '';
+                $('name').value = customer.name || ''; $('phone').value = customer.phone || ''; $('company').value = customer.company || ''; $('email').value = customer.email || ''; $('budget').value = customer.budget || ''; $('whatsapp').value = customer.whatsapp || ''; $('salesSelect').value = customer.sales_id || ''; $('status').value = customer.status || 'active'; $('leadScore').value = customer.lead_score ?? 50; $('details').value = customer.details || ''; $('notes').value = customer.notes || '';
+                $('purpose').value = customer.purpose || 'buy'; $('desiredPropertyType').value = customer.desired_property_type || 'apartment'; $('paymentMethod').value = customer.payment_method || 'cash'; $('desiredArea').value = customer.desired_area || ''; $('desiredRooms').value = customer.desired_rooms || '';
                 if (customer.city_id) {
                     $('customerCitySelect').value = customer.city_id;
                     populateDistrictSelect('customerDistrictSelect', customer.city_id, customer.district_id);
@@ -736,6 +1001,7 @@
             }
             // السيلز مش مسموح له يغيّر مين المسؤول عن العميل - المدير بس اللي يقدر
             $('salesSelect').disabled = (CURRENT_USER_ROLE === 'sales');
+            goToCustomerStep(1);
             $('customerModal').classList.add('open');
             $('name').focus();
         }
@@ -811,12 +1077,19 @@
                 name: $('name').value.trim(),
                 phone: $('phone').value.trim(),
                 company: $('company').value.trim(),
+                email: $('email').value.trim(),
                 budget: Number($('budget').value) || 0,
                 whatsapp: $('whatsapp').value.trim(),
                 sales_id: CURRENT_USER_ROLE === 'sales' ? CURRENT_USER_ID : ($('salesSelect').value || null),
                 city_id: $('customerCitySelect').value ? Number($('customerCitySelect').value) : null,
                 district_id: $('customerDistrictSelect').value ? Number($('customerDistrictSelect').value) : null,
+                purpose: $('purpose').value,
+                desired_property_type: $('desiredPropertyType').value,
+                payment_method: $('paymentMethod').value,
+                desired_area: $('desiredArea').value ? Number($('desiredArea').value) : null,
+                desired_rooms: $('desiredRooms').value ? Number($('desiredRooms').value) : null,
                 status: $('status').value,
+                lead_score: Math.max(0, Math.min(100, Number($('leadScore').value) || 50)),
                 details: $('details').value.trim(),
                 notes: $('notes').value.trim(),
                 last_contact: 'الآن'
@@ -851,6 +1124,232 @@
         });
 
         // =====================================================
+        // الملاك (Owners)
+        // =====================================================
+        let owners = [];
+        let ownersLoadedOnce = false;
+        let selectedOwnerId = null;
+
+        const ownerVerificationLabel = (status) => status === 'verified' ? 'تم التحقق' : status === 'rejected' ? 'مرفوض' : 'قيد المراجعة';
+        const ownerVerificationClass = (status) => status === 'verified' ? '' : 'inactive';
+
+        async function loadOwnersIfNeeded() {
+            if (ownersLoadedOnce) return;
+            await loadOwners();
+        }
+
+        async function loadOwners() {
+            try {
+                let query = supabaseClient
+                    .from('owners')
+                    .select('*')
+                    .eq('company_id', CURRENT_COMPANY_ID)
+                    .order('created_at', { ascending: false });
+                if (CURRENT_USER_ROLE === 'sales') {
+                    query = query.eq('sales_id', CURRENT_USER_ID);
+                }
+                const { data, error } = await query;
+                if (error) throw error;
+                owners = data;
+                ownersLoadedOnce = true;
+                renderOwners();
+            } catch (error) {
+                showMessage('فشل تحميل بيانات الملاك: ' + (error.message || ''), 'error');
+            }
+        }
+
+        async function addOwnerToDb(data) {
+            const { data: inserted, error } = await supabaseClient
+                .from('owners')
+                .insert([{ ...data, company_id: CURRENT_COMPANY_ID }])
+                .select();
+            if (error) throw error;
+            return inserted[0];
+        }
+
+        async function updateOwnerInDb(id, data) {
+            const { error } = await supabaseClient.from('owners').update(data).eq('id', id);
+            if (error) throw error;
+        }
+
+        async function deleteOwnerFromDb(id) {
+            const { error } = await supabaseClient.from('owners').delete().eq('id', id);
+            if (error) throw error;
+        }
+
+        function renderOwners() {
+            const query = ($('ownerSearchInput')?.value || '').trim().toLowerCase();
+            const verification = $('ownerVerificationFilter')?.value || '';
+            const filtered = owners.filter(owner =>
+                Object.values(owner).some(value => String(value ?? '').toLowerCase().includes(query)) &&
+                (!verification || (owner.verification_status || 'pending') === verification)
+            );
+            $('ownersResultCount').textContent = `(${filtered.length})`;
+            $('totalOwners').textContent = owners.length;
+            $('verifiedOwners').textContent = owners.filter(o => o.verification_status === 'verified').length;
+            $('pendingOwners').textContent = owners.filter(o => (o.verification_status || 'pending') === 'pending').length;
+            $('linkedPropertiesOwners').textContent = properties.filter(p => p.owner_id).length;
+
+            $('ownerRows').innerHTML = filtered.length ? filtered.map(owner => {
+                const cityName = cities.find(c => c.id === owner.city_id)?.name || '—';
+                const status = owner.verification_status || 'pending';
+                return `<tr data-id="${owner.id}"><td><div class="customer-name"><span class="avatar">${initials(owner.name)}</span>${owner.name}</div></td><td><a class="contact-link" href="tel:${(owner.phone || '').replace(/\s/g, '')}">${owner.phone || '—'}</a></td><td>${cityName}</td><td>${owner.source || '—'}</td><td>${owner.relationship_score ?? 50}</td><td><span class="status ${ownerVerificationClass(status)}">${ownerVerificationLabel(status)}</span></td><td><div class="actions"><button class="icon-btn edit-owner" data-id="${owner.id}" aria-label="تعديل ${owner.name}">✎</button><button class="icon-btn delete-owner" data-id="${owner.id}" aria-label="حذف ${owner.name}" ${CURRENT_USER_ROLE !== 'admin' ? 'disabled' : ''}>⌫</button></div></td></tr>`;
+            }).join('') : '<tr><td class="empty" colspan="7">لا يوجد ملاك مسجلين بعد</td></tr>';
+        }
+
+        async function openOwnerModal(owner) {
+            $('ownerForm').reset();
+            $('ownerId').value = owner ? owner.id : '';
+            $('ownerModalTitle').textContent = owner ? 'تعديل بيانات المالك' : 'إضافة مالك جديد';
+            $('ownerSalesSelect').innerHTML = '<option value="">بدون تحديد</option>' +
+                salesTeam.map(s => `<option value="${s.id}">${s.full_name || 'بدون اسم'}</option>`).join('');
+            await loadCitiesIfNeeded();
+            $('ownerCitySelect').innerHTML = '<option value="">اختاري مدينة</option>' +
+                cities.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            if (owner) {
+                $('ownerName').value = owner.name || '';
+                $('ownerPhone').value = owner.phone || '';
+                $('ownerWhatsapp').value = owner.whatsapp || '';
+                $('ownerEmail').value = owner.email || '';
+                $('ownerSalesSelect').value = owner.sales_id || '';
+                $('ownerSource').value = owner.source || '';
+                $('ownerVerificationStatus').value = owner.verification_status || 'pending';
+                $('ownerRelationshipScore').value = owner.relationship_score ?? 50;
+                $('ownerNotes').value = owner.notes || '';
+                if (owner.city_id) {
+                    $('ownerCitySelect').value = owner.city_id;
+                    populateDistrictSelect('ownerDistrictSelect', owner.city_id, owner.district_id);
+                }
+            } else {
+                $('ownerDistrictSelect').innerHTML = '<option value="">اختاري منطقة</option>';
+            }
+            $('ownerSalesSelect').disabled = (CURRENT_USER_ROLE === 'sales');
+            $('ownerModal').classList.add('open');
+            $('ownerName').focus();
+        }
+        function closeOwnerModal() { $('ownerModal').classList.remove('open'); }
+
+        function renderOwnerFollowups(owner) {
+            const followUps = owner.follow_ups || [];
+            $('ownerFollowupList').innerHTML = followUps.length ? followUps.slice().reverse().map(followUp => `<article class="followup-item"><strong>${followUp.type}</strong><p>${followUp.notes}</p><time>${followUp.date}</time></article>`).join('') : '<div class="empty" style="padding:18px">لا توجد متابعات مسجلة لهذا المالك</div>';
+        }
+
+        function renderOwnerProperties(owner) {
+            const linked = properties.filter(p => p.owner_id === owner.id);
+            $('ownerPropertiesList').innerHTML = linked.length ? `<div class="table-wrap"><table><thead><tr><th>اسم/عنوان العقار</th><th>الحالة</th><th>السعر</th></tr></thead><tbody>${linked.map(p => `<tr><td>${p.title}</td><td>${p.status || '—'}</td><td>${Number(p.price || 0).toLocaleString('en-US')}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty" style="padding:14px">لا توجد عقارات مرتبطة بهذا المالك بعد</div>';
+        }
+
+        function openOwnerDetailModal(owner) {
+            selectedOwnerId = owner.id;
+            const status = owner.verification_status || 'pending';
+            $('ownerDetailModalTitle').textContent = `تفاصيل المالك: ${owner.name}`;
+            $('ownerDetailModalContent').innerHTML = `<div class="detail-profile"><span class="avatar">${initials(owner.name)}</span><div><strong>${owner.name}</strong><small><span class="status ${ownerVerificationClass(status)}">${ownerVerificationLabel(status)}</span> · درجة العلاقة: ${owner.relationship_score ?? 50}</small></div></div><div class="detail-actions"><a class="contact-button" href="tel:${(owner.phone || '').replace(/\s/g, '')}">☎ اتصال</a>${owner.whatsapp ? `<a class="contact-button whatsapp" href="https://wa.me/${owner.whatsapp.replace(/\D/g, '')}" target="_blank">◉ واتساب</a>` : ''}</div><div class="detail-list"><div><span>رقم الهاتف</span><b>${owner.phone || '—'}</b></div><div><span>رقم الواتساب</span><b>${owner.whatsapp || '—'}</b></div><div><span>البريد الإلكتروني</span><b>${owner.email || '—'}</b></div><div><span>مصدر التعرف عليه</span><b>${owner.source || '—'}</b></div><div><span>السيلز المسؤول</span><b>${owner.sales_id ? (salesTeam.find(s => s.id === owner.sales_id)?.full_name || '—') : '—'}</b></div><div><span>الملاحظات</span><b>${owner.notes || '—'}</b></div></div>`;
+            $('ownerFollowupDate').value = new Date().toISOString().slice(0, 10);
+            renderOwnerFollowups(owner);
+            renderOwnerProperties(owner);
+            $('ownerDetailModal').classList.add('open');
+        }
+        function closeOwnerDetailModal() { $('ownerDetailModal').classList.remove('open'); }
+
+        $('ownerCitySelect').addEventListener('change', () => {
+            populateDistrictSelect('ownerDistrictSelect', $('ownerCitySelect').value, null);
+        });
+
+        $('addOwner').addEventListener('click', () => openOwnerModal());
+        $('closeOwnerModal').addEventListener('click', closeOwnerModal);
+        $('cancelOwnerModal').addEventListener('click', closeOwnerModal);
+        $('ownerModal').addEventListener('click', event => { if (event.target === $('ownerModal')) closeOwnerModal(); });
+        $('closeOwnerDetailModal').addEventListener('click', closeOwnerDetailModal);
+        $('ownerDetailModal').addEventListener('click', event => { if (event.target === $('ownerDetailModal')) closeOwnerDetailModal(); });
+        $('ownerSearchInput').addEventListener('input', renderOwners);
+        $('ownerVerificationFilter').addEventListener('change', renderOwners);
+
+        $('ownerRows').addEventListener('click', async event => {
+            const button = event.target.closest('button');
+            const row = event.target.closest('tr');
+            if (button?.classList.contains('edit-owner')) {
+                openOwnerModal(owners.find(o => o.id === Number(button.dataset.id)));
+            } else if (button?.classList.contains('delete-owner') && !button.disabled) {
+                const id = Number(button.dataset.id);
+                const owner = owners.find(o => o.id === id);
+                if (confirm(`هل تريدين حذف المالك ${owner.name}؟`)) {
+                    try {
+                        await deleteOwnerFromDb(id);
+                        owners = owners.filter(o => o.id !== id);
+                        renderOwners();
+                        showMessage('تم حذف المالك بنجاح', 'success');
+                    } catch (error) {
+                        showMessage('حدث خطأ أثناء الحذف: ' + (error.message || ''), 'error');
+                    }
+                }
+            } else if (row?.dataset.id && !event.target.closest('a')) {
+                const owner = owners.find(o => o.id === Number(row.dataset.id));
+                openOwnerDetailModal(owner);
+            }
+        });
+
+        $('ownerFollowupForm').addEventListener('submit', async event => {
+            event.preventDefault();
+            const owner = owners.find(o => o.id === selectedOwnerId);
+            if (!owner || !$('ownerFollowupDate').value || !$('ownerFollowupNotes').value.trim()) { showMessage('يرجى إدخال التاريخ وملاحظات المتابعة', 'error'); return; }
+            const followUps = owner.follow_ups || [];
+            followUps.push({ date: $('ownerFollowupDate').value, type: $('ownerFollowupType').value, notes: $('ownerFollowupNotes').value.trim() });
+            try {
+                await updateOwnerInDb(owner.id, { follow_ups: followUps });
+                owner.follow_ups = followUps;
+                $('ownerFollowupNotes').value = '';
+                renderOwnerFollowups(owner);
+                showMessage('تمت إضافة المتابعة بنجاح', 'success');
+            } catch (error) {
+                showMessage('حدث خطأ أثناء حفظ المتابعة: ' + (error.message || ''), 'error');
+            }
+        });
+
+        $('ownerForm').addEventListener('submit', async event => {
+            event.preventDefault();
+            if (!$('ownerName').value.trim() || !$('ownerPhone').value.trim()) {
+                showMessage('يرجى إدخال اسم المالك ورقم الهاتف على الأقل', 'error');
+                return;
+            }
+            const data = {
+                name: $('ownerName').value.trim(),
+                phone: $('ownerPhone').value.trim(),
+                whatsapp: $('ownerWhatsapp').value.trim(),
+                email: $('ownerEmail').value.trim(),
+                sales_id: CURRENT_USER_ROLE === 'sales' ? CURRENT_USER_ID : ($('ownerSalesSelect').value || null),
+                city_id: $('ownerCitySelect').value ? Number($('ownerCitySelect').value) : null,
+                district_id: $('ownerDistrictSelect').value ? Number($('ownerDistrictSelect').value) : null,
+                source: $('ownerSource').value.trim(),
+                verification_status: $('ownerVerificationStatus').value,
+                relationship_score: Number($('ownerRelationshipScore').value) || 50,
+                notes: $('ownerNotes').value.trim()
+            };
+            const id = Number($('ownerId').value);
+            const saveBtn = $('saveOwnerBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'جاري الحفظ...';
+            try {
+                if (id) {
+                    await updateOwnerInDb(id, data);
+                    const existing = owners.find(o => o.id === id);
+                    Object.assign(existing, data);
+                    showMessage('تم تحديث بيانات المالك بنجاح', 'success');
+                } else {
+                    const inserted = await addOwnerToDb(data);
+                    owners.unshift(inserted);
+                    showMessage('تم حفظ المالك بنجاح', 'success');
+                }
+                closeOwnerModal();
+                renderOwners();
+            } catch (error) {
+                showMessage('حدث خطأ أثناء الحفظ: ' + (error.message || ''), 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'حفظ المالك';
+            }
+        });
+
+        // =====================================================
         // تسجيل الدخول
         // =====================================================
         async function handleLogin(email, password) {
@@ -880,9 +1379,12 @@
             }
             $('companyLogoField').style.display = (CURRENT_USER_ROLE === 'admin') ? 'block' : 'none';
             $('areasMenuItem').style.display = (CURRENT_USER_ROLE === 'admin') ? '' : 'none';
+            $('planMenuItem').style.display = (CURRENT_USER_ROLE === 'admin') ? '' : 'none';
+            $('reportsMenuItem').style.display = (CURRENT_USER_ROLE === 'admin') ? '' : 'none';
             await loadSalesTeam();
             loadCustomers();
             setupSectionSwitching();
+            handleFacebookOAuthReturn();
         }
 
         // =====================================================
@@ -898,6 +1400,9 @@
                     if (item.dataset.section === 'leadsSection' && leadsLoadedOnce === false) {
                         loadLeads();
                     }
+                    if (item.dataset.section === 'ownersSection' && ownersLoadedOnce === false) {
+                        loadOwners();
+                    }
                     if (item.dataset.section === 'propertiesSection' && propertiesLoadedOnce === false) {
                         loadProperties();
                     }
@@ -907,8 +1412,9 @@
                     if (item.dataset.section === 'finishesSection' && finishesLoadedOnce === false) {
                         loadFinishes();
                     }
-                    if (item.dataset.section === 'publishingSection' && postsLoadedOnce === false) {
-                        loadPosts();
+                    if (item.dataset.section === 'publishingSection') {
+                        if (postsLoadedOnce === false) loadPosts();
+                        loadSocialConnection();
                     }
                     if (item.dataset.section === 'supportSection' && ticketsLoadedOnce === false) {
                         loadTickets();
@@ -924,6 +1430,12 @@
                     }
                     if (item.dataset.section === 'developersSection' && developersLoadedOnce === false) {
                         loadDevelopers();
+                    }
+                    if (item.dataset.section === 'planSection') {
+                        loadPlanInfo();
+                    }
+                    if (item.dataset.section === 'reportsSection') {
+                        loadReportsData();
                     }
                 });
             });
@@ -978,6 +1490,115 @@
             }
         }
 
+        // =====================================================
+        // التقارير والإحصائيات
+        // =====================================================
+        let reportsCharts = {};
+
+        async function loadReportsData() {
+            if (dealsLoadedOnce === false) await loadDeals();
+            if (propertiesLoadedOnce === false) await loadProperties();
+            renderReports();
+        }
+
+        function filterByPeriod(list) {
+            const days = $('reportsPeriodFilter').value;
+            if (days === 'all') return list;
+            const cutoff = Date.now() - Number(days) * 24 * 60 * 60 * 1000;
+            return list.filter(item => item.created_at && new Date(item.created_at).getTime() >= cutoff);
+        }
+
+        function destroyChart(key) {
+            if (reportsCharts[key]) {
+                reportsCharts[key].destroy();
+                delete reportsCharts[key];
+            }
+        }
+
+        function renderReports() {
+            const filteredCustomers = filterByPeriod(customers);
+            const filteredDeals = filterByPeriod(deals);
+            const wonDealsList = filteredDeals.filter(d => d.stage === 'won');
+            const wonValue = wonDealsList.reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+            const conversionRate = filteredDeals.length ? Math.round((wonDealsList.length / filteredDeals.length) * 100) : 0;
+            const avgDealValue = wonDealsList.length ? Math.round(wonValue / wonDealsList.length) : 0;
+
+            $('reportTotalCustomers').textContent = filteredCustomers.length;
+            $('reportTotalDeals').textContent = filteredDeals.length;
+            $('reportWonValue').textContent = `${wonValue.toLocaleString('en-US')} ر.س`;
+            $('reportConversionRate').textContent = `${conversionRate}%`;
+            $('reportAvgDealValue').textContent = `${avgDealValue.toLocaleString('en-US')} ر.س`;
+            $('reportTotalProperties').textContent = properties.length;
+
+            // عملاء جدد شهرياً (آخر 6 شهور)
+            const monthLabels = [];
+            const monthCounts = [];
+            const now = new Date();
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const label = d.toLocaleDateString('ar-EG', { month: 'short', year: 'numeric' });
+                monthLabels.push(label);
+                const count = customers.filter(c => {
+                    if (!c.created_at) return false;
+                    const cd = new Date(c.created_at);
+                    return cd.getFullYear() === d.getFullYear() && cd.getMonth() === d.getMonth();
+                }).length;
+                monthCounts.push(count);
+            }
+            destroyChart('monthly');
+            reportsCharts.monthly = new Chart($('chartCustomersMonthly'), {
+                type: 'bar',
+                data: { labels: monthLabels, datasets: [{ label: 'عملاء جدد', data: monthCounts, backgroundColor: '#18795d' }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+            });
+
+            // توزيع العملاء حسب الأولوية
+            const priorityCounts = { high: 0, medium: 0, low: 0 };
+            customers.forEach(c => { priorityCounts[leadPriorityKey(c.lead_score)]++; });
+            destroyChart('priority');
+            reportsCharts.priority = new Chart($('chartCustomersPriority'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['أولوية عالية 🔴', 'أولوية متوسطة 🟡', 'أولوية منخفضة 🟢'],
+                    datasets: [{ data: [priorityCounts.high, priorityCounts.medium, priorityCounts.low], backgroundColor: ['#d64545', '#c98529', '#18795d'] }]
+                },
+                options: { responsive: true }
+            });
+
+            // حالة الصفقات
+            const stageCounts = { negotiation: 0, won: 0, lost: 0 };
+            deals.forEach(d => { if (stageCounts[d.stage] !== undefined) stageCounts[d.stage]++; });
+            destroyChart('stage');
+            reportsCharts.stage = new Chart($('chartDealsStage'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['قيد التفاوض', 'فائزة', 'خاسرة'],
+                    datasets: [{ data: [stageCounts.negotiation, stageCounts.won, stageCounts.lost], backgroundColor: ['#c98529', '#18795d', '#d64545'] }]
+                },
+                options: { responsive: true }
+            });
+
+            // أفضل 5 سيلز بقيمة الصفقات الفائزة
+            const salesValueMap = {};
+            deals.filter(d => d.stage === 'won' && d.sales_id).forEach(d => {
+                salesValueMap[d.sales_id] = (salesValueMap[d.sales_id] || 0) + (Number(d.value) || 0);
+            });
+            const topSales = Object.entries(salesValueMap)
+                .map(([id, value]) => ({ name: salesTeam.find(s => s.id === id)?.full_name || 'بدون اسم', value }))
+                .sort((a, b) => b.value - a.value)
+                .slice(0, 5);
+            destroyChart('topSales');
+            reportsCharts.topSales = new Chart($('chartTopSales'), {
+                type: 'bar',
+                data: { labels: topSales.map(s => s.name), datasets: [{ label: 'قيمة الصفقات الفائزة', data: topSales.map(s => s.value), backgroundColor: '#c98529' }] },
+                options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } } }
+            });
+        }
+
+        $('reportsPeriodFilter').addEventListener('change', () => {
+            if ($('reportsSection').classList.contains('active')) renderReports();
+        });
+
         $('loginForm').addEventListener('submit', async event => {
             event.preventDefault();
             const errorBox = $('loginError');
@@ -985,8 +1606,15 @@
             errorBox.classList.remove('show');
             btn.disabled = true;
             btn.textContent = 'جاري الدخول...';
-            localStorage.setItem('della_remember', $('rememberMeCheckbox').checked ? 'true' : 'false');
-            localStorage.setItem('della_last_email', $('loginEmail').value.trim());
+            const rememberChecked = $('rememberMeCheckbox').checked;
+            localStorage.setItem('della_remember', rememberChecked ? 'true' : 'false');
+            if (rememberChecked) {
+                localStorage.setItem('della_last_email', $('loginEmail').value.trim());
+                localStorage.setItem('della_last_password', $('loginPassword').value);
+            } else {
+                localStorage.removeItem('della_last_email');
+                localStorage.removeItem('della_last_password');
+            }
             try {
                 const user = await handleLogin($('loginEmail').value.trim(), $('loginPassword').value);
                 const profile = await loadCurrentUserProfile(user.id);
@@ -1012,6 +1640,8 @@
             event.preventDefault();
             $('loginBox').classList.add('hidden');
             $('signupBox').classList.remove('hidden');
+            signupStepIndex = 0;
+            showSignupStep();
         });
         $('showLoginLink').addEventListener('click', event => {
             event.preventDefault();
@@ -1053,23 +1683,125 @@
         });
 
         // =====================================================
-        // تسجيل شركة جديدة (Sign up)
+        // تسجيل شركة جديدة (Sign up) - فورم متعدد الخطوات
         // =====================================================
+        function showSignupError(text) {
+            const errorBox = $('signupError');
+            errorBox.style.color = '#9a443d';
+            errorBox.style.background = '#fbe9e7';
+            errorBox.textContent = text;
+            errorBox.classList.add('show');
+        }
+
+        $('signupCompanyCode').addEventListener('input', () => {
+            const hasCode = $('signupCompanyCode').value.trim().length > 0;
+            $('signupCompanyNameField').style.display = hasCode ? 'none' : '';
+            $('signupEmployeeCountField').style.display = hasCode ? 'none' : '';
+            $('signupCompanyName').required = !hasCode;
+            signupStepIndex = 0;
+            showSignupStep();
+        });
+
+        function getSignupSteps() {
+            const hasCode = $('signupCompanyCode').value.trim().length > 0;
+            return hasCode ? ['account'] : ['account', 'plan', 'payment'];
+        }
+        let signupStepIndex = 0;
+
+        function updateSelectedPlanPrice() {
+            const checked = document.querySelector('input[name="signupPlan"]:checked');
+            const isEnterprise = checked.value === 'enterprise';
+            $('signupPlanPriceLabel').textContent = checked.dataset.price;
+            $('paymentNormalBox').style.display = isEnterprise ? 'none' : '';
+            $('paymentEnterpriseBox').style.display = isEnterprise ? '' : 'none';
+        }
+
+        function updatePaymentInstructions() {
+            const method = $('signupPaymentMethod').value;
+            const box = $('paymentInstructions');
+            if (method === 'vodafone_cash') {
+                box.innerHTML = 'حوّلي المبلغ على رقم فودافون كاش: <strong dir="ltr">01010778170</strong>، وابعتيلنا صورة من إيصال التحويل واتساب على نفس الرقم.';
+            } else if (method === 'instapay') {
+                box.innerHTML = 'حوّلي المبلغ عبر إنستاباي على رقم: <strong dir="ltr">01154749120</strong>، وابعتيلنا صورة من إيصال التحويل واتساب على <strong dir="ltr">01010778170</strong>.';
+            } else {
+                box.innerHTML = 'للدفع بالفيزا/البطاقة تواصلي معنا واتساب على <strong dir="ltr">01010778170</strong> وهنبعتلك رابط دفع آمن.';
+            }
+        }
+        $('signupPaymentMethod').addEventListener('change', updatePaymentInstructions);
+        document.querySelectorAll('input[name="signupPlan"]').forEach(radio => {
+            radio.addEventListener('change', updateSelectedPlanPrice);
+        });
+
+        function showSignupStep() {
+            const steps = getSignupSteps();
+            if (signupStepIndex > steps.length - 1) signupStepIndex = steps.length - 1;
+            const current = steps[signupStepIndex];
+            document.querySelectorAll('.signup-step').forEach(el => {
+                el.style.display = el.dataset.step === current ? '' : 'none';
+            });
+            const isLast = signupStepIndex === steps.length - 1;
+            $('signupPrevBtn').style.display = signupStepIndex === 0 ? 'none' : '';
+            $('signupNextBtn').style.display = isLast ? 'none' : '';
+            $('signupBtn').style.display = isLast ? '' : 'none';
+            $('signupStepIndicator').textContent = steps.length > 1 ? `الخطوة ${signupStepIndex + 1} من ${steps.length}` : '';
+            if (current === 'plan') updateSelectedPlanPrice();
+            if (current === 'payment') updatePaymentInstructions();
+        }
+
+        $('signupNextBtn').addEventListener('click', () => {
+            const steps = getSignupSteps();
+            $('signupError').classList.remove('show');
+            if (steps[signupStepIndex] === 'account') {
+                const hasCode = $('signupCompanyCode').value.trim().length > 0;
+                if (!hasCode && !$('signupCompanyName').value.trim()) { showSignupError('يرجى إدخال اسم الشركة'); return; }
+                if (!$('signupFullName').value.trim() || !$('signupEmail').value.trim() || !$('signupPassword').value) {
+                    showSignupError('يرجى تعبئة جميع البيانات المطلوبة');
+                    return;
+                }
+            }
+            if (signupStepIndex < steps.length - 1) { signupStepIndex++; showSignupStep(); }
+        });
+        $('signupPrevBtn').addEventListener('click', () => {
+            if (signupStepIndex > 0) { signupStepIndex--; showSignupStep(); }
+        });
+
         $('signupForm').addEventListener('submit', async event => {
             event.preventDefault();
             const errorBox = $('signupError');
             const btn = $('signupBtn');
             errorBox.classList.remove('show');
+            const companyCode = $('signupCompanyCode').value.trim().toUpperCase();
+            if (!companyCode && !$('signupCompanyName').value.trim()) {
+                showSignupError('يرجى إدخال اسم الشركة، أو كود دعوة لو بتنضمي لشركة موجودة');
+                return;
+            }
+            const selectedPlanRadio = document.querySelector('input[name="signupPlan"]:checked');
             btn.disabled = true;
             btn.textContent = 'جاري الإنشاء...';
             try {
+                if (companyCode) {
+                    const { data: isValidCode } = await supabaseClient
+                        .rpc('check_company_code', { code: companyCode });
+                    if (!isValidCode) {
+                        showSignupError('كود دعوة الشركة غير صحيح، تأكدي منه مع مدير الشركة');
+                        btn.disabled = false;
+                        btn.textContent = 'إنشاء الحساب والشركة';
+                        return;
+                    }
+                }
                 const { data, error } = await supabaseClient.auth.signUp({
                     email: $('signupEmail').value.trim(),
                     password: $('signupPassword').value,
                     options: {
                         data: {
                             company_name: $('signupCompanyName').value.trim(),
-                            full_name: $('signupFullName').value.trim()
+                            full_name: $('signupFullName').value.trim(),
+                            company_code: companyCode,
+                            employee_count: $('signupEmployeeCount').value ? Number($('signupEmployeeCount').value) : null,
+                            plan: companyCode ? null : selectedPlanRadio.value,
+                            max_users: companyCode ? null : Number(selectedPlanRadio.dataset.max),
+                            subscription_price: companyCode ? null : Number(selectedPlanRadio.dataset.price),
+                            payment_method: companyCode ? null : (selectedPlanRadio.value === 'enterprise' ? 'contact_sales' : $('signupPaymentMethod').value)
                         }
                     }
                 });
@@ -1459,6 +2191,9 @@
             $('propertyModalTitle').textContent = property ? 'تعديل بيانات العقار' : 'إضافة عقار';
             $('propertySalesSelect').innerHTML = '<option value="">بدون تحديد</option>' +
                 salesTeam.map(s => `<option value="${s.id}">${s.full_name || 'بدون اسم'}</option>`).join('');
+            await loadOwnersIfNeeded();
+            $('propertyOwnerSelect').innerHTML = '<option value="">بدون تحديد</option>' +
+                owners.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
             await loadCitiesIfNeeded();
             $('propertyCitySelect').innerHTML = '<option value="">اختاري مدينة</option>' +
                 cities.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
@@ -1469,6 +2204,7 @@
                 $('propertyRooms').value = property.rooms || '';
                 $('propertyPrice').value = property.price || '';
                 $('propertySalesSelect').value = property.sales_id || '';
+                $('propertyOwnerSelect').value = property.owner_id || '';
                 $('propertyFinishStatus').value = property.finish_status || 'unfinished';
                 $('propertyStatus').value = property.status || 'available';
                 $('propertyNotes').value = property.notes || '';
@@ -1529,6 +2265,7 @@
                 rooms: Number($('propertyRooms').value) || null,
                 price: Number($('propertyPrice').value) || 0,
                 sales_id: CURRENT_USER_ROLE === 'sales' ? CURRENT_USER_ID : ($('propertySalesSelect').value || null),
+                owner_id: $('propertyOwnerSelect').value ? Number($('propertyOwnerSelect').value) : null,
                 finish_status: $('propertyFinishStatus').value,
                 status: $('propertyStatus').value,
                 notes: $('propertyNotes').value.trim()
@@ -1996,6 +2733,7 @@
                     <td>${post.title || '—'}</td>
                     <td><span class="status ${statusClass}">${postStatusLabel(post.status)}</span></td>
                     <td><div class="actions">
+                        ${post.platform === 'facebook' && post.status !== 'published' ? `<button class="icon-btn publish-post" data-id="${post.id}" aria-label="نشر الآن" title="نشر الآن على فيسبوك">📢</button>` : ''}
                         <button class="icon-btn edit-post" data-id="${post.id}" aria-label="تعديل المنشور">✎</button>
                         <button class="icon-btn delete-post" data-id="${post.id}" aria-label="حذف المنشور" ${CURRENT_USER_ROLE !== 'admin' ? 'disabled' : ''}>⌫</button>
                     </div></td>
@@ -2032,7 +2770,14 @@
 
         $('postRows').addEventListener('click', async event => {
             const button = event.target.closest('button');
-            if (button?.classList.contains('edit-post')) {
+            if (button?.classList.contains('publish-post')) {
+                const post = posts.find(p => p.id === Number(button.dataset.id));
+                if (confirm(`هل تريدين نشر "${post.title}" على فيسبوك الآن؟`)) {
+                    button.disabled = true;
+                    await publishPostToFacebook(post);
+                    button.disabled = false;
+                }
+            } else if (button?.classList.contains('edit-post')) {
                 openPostModal(posts.find(p => p.id === Number(button.dataset.id)));
             } else if (button?.classList.contains('delete-post') && !button.disabled) {
                 const id = Number(button.dataset.id);
@@ -2088,6 +2833,106 @@
                 saveBtn.textContent = 'حفظ المنشور';
             }
         });
+
+        // =====================================================
+        // ربط ونشر فيسبوك (Facebook Publishing)
+        // =====================================================
+        const FB_APP_ID_CLIENT = '1593457228926279';
+        const FB_OAUTH_FUNCTION_URL = 'https://miyurcxzuxrhypneapzl.supabase.co/functions/v1/super-action';
+        let facebookConnection = null;
+
+        async function loadSocialConnection() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('social_connections')
+                    .select('*')
+                    .eq('company_id', CURRENT_COMPANY_ID)
+                    .eq('platform', 'facebook')
+                    .maybeSingle();
+                if (error) throw error;
+                facebookConnection = data;
+                renderFacebookConnectionStatus();
+            } catch (error) {
+                $('facebookConnectionStatus').textContent = 'تعذر التحقق من حالة الربط بفيسبوك';
+            }
+        }
+
+        function renderFacebookConnectionStatus() {
+            const isAdmin = CURRENT_USER_ROLE === 'admin';
+            if (facebookConnection) {
+                $('facebookConnectionStatus').innerHTML = `متصلة بصفحة: <strong>${facebookConnection.page_name}</strong> ✅`;
+                $('connectFacebookBtn').style.display = 'none';
+                $('disconnectFacebookBtn').style.display = isAdmin ? '' : 'none';
+            } else {
+                $('facebookConnectionStatus').textContent = 'لسه مفيش صفحة فيسبوك متصلة';
+                $('connectFacebookBtn').style.display = isAdmin ? '' : 'none';
+                $('disconnectFacebookBtn').style.display = 'none';
+            }
+        }
+
+        $('connectFacebookBtn').addEventListener('click', async () => {
+            const { data: sessionData } = await supabaseClient.auth.getSession();
+            const accessToken = sessionData?.session?.access_token;
+            if (!accessToken) { showMessage('يرجى تسجيل الدخول من جديد', 'error'); return; }
+            const redirectUri = encodeURIComponent(FB_OAUTH_FUNCTION_URL);
+            const scope = 'pages_show_list,pages_manage_posts,pages_read_engagement';
+            const oauthUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${FB_APP_ID_CLIENT}&redirect_uri=${redirectUri}&scope=${scope}&state=${encodeURIComponent(accessToken)}&response_type=code`;
+            window.location.href = oauthUrl;
+        });
+
+        $('disconnectFacebookBtn').addEventListener('click', async () => {
+            if (!facebookConnection) return;
+            if (!confirm('هل تريدين قطع الاتصال بصفحة فيسبوك؟')) return;
+            try {
+                await supabaseClient.from('social_connections').delete().eq('id', facebookConnection.id);
+                facebookConnection = null;
+                renderFacebookConnectionStatus();
+                showMessage('تم قطع الاتصال بنجاح', 'success');
+            } catch (error) {
+                showMessage('حدث خطأ أثناء قطع الاتصال: ' + (error.message || ''), 'error');
+            }
+        });
+
+        function handleFacebookOAuthReturn() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('fb_connected') === '1') {
+                showMessage('تم ربط صفحة فيسبوك بنجاح 🎉', 'success');
+                window.history.replaceState({}, '', window.location.pathname);
+                loadSocialConnection();
+            }
+        }
+
+        async function publishPostToFacebook(post) {
+            if (!facebookConnection) {
+                showMessage('لازم تربطي صفحة فيسبوك الأول من قسم النشر', 'error');
+                return;
+            }
+            const property = properties.find(p => p.id === post.property_id);
+            const priceText = post.price ? `\nالسعر: ${Number(post.price).toLocaleString('en-US')} جنيه` : '';
+            const message = `${post.title}\n\n${post.post_text}${priceText}\n\n${post.hashtags || ''}`;
+            try {
+                const response = await fetch(`https://graph.facebook.com/v21.0/${facebookConnection.page_id}/feed`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        message,
+                        access_token: facebookConnection.page_access_token
+                    })
+                });
+                const result = await response.json();
+                if (result.error) throw new Error(result.error.message);
+                await updatePostInDb(post.id, {
+                    status: 'published',
+                    facebook_post_id: result.id,
+                    published_at: new Date().toISOString()
+                });
+                Object.assign(post, { status: 'published', facebook_post_id: result.id });
+                renderPosts();
+                showMessage('تم النشر على فيسبوك بنجاح 🎉', 'success');
+            } catch (error) {
+                showMessage('فشل النشر على فيسبوك: ' + (error.message || ''), 'error');
+            }
+        }
 
         // =====================================================
         // قسم خدمة العملاء والدعم الفني (Support Tickets)
@@ -2531,6 +3376,9 @@
 
         const savedEmail = localStorage.getItem('della_last_email');
         if (savedEmail) $('loginEmail').value = savedEmail;
+        const savedPassword = localStorage.getItem('della_last_password');
+        if (savedPassword) $('loginPassword').value = savedPassword;
+        $('rememberMeCheckbox').checked = localStorage.getItem('della_remember') !== 'false';
 
         // =====================================================
         // المقاولين والمطورين (Developers & Contractors)
@@ -2656,6 +3504,47 @@
                 saveBtn.disabled = false;
                 saveBtn.textContent = 'حفظ';
             }
+        });
+
+        // =====================================================
+        // الباقة والاشتراك (Plan & Subscription)
+        // =====================================================
+        const planNameLabel = (plan) => ({
+            single: 'Single (فردي)', basic: 'Basic (أساسية)', pro: 'Pro (احترافية)', enterprise: 'Enterprise (مؤسسات)'
+        }[plan] || plan);
+
+        async function loadPlanInfo() {
+            try {
+                const { data: company, error } = await supabaseClient
+                    .from('companies')
+                    .select('plan, max_users, company_code')
+                    .eq('id', CURRENT_COMPANY_ID)
+                    .single();
+                if (error) throw error;
+                $('companyInviteCode').textContent = company.company_code || '——————';
+
+                const { count, error: countError } = await supabaseClient
+                    .from('profiles')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('company_id', CURRENT_COMPANY_ID);
+                if (countError) throw countError;
+
+                $('currentPlanName').textContent = planNameLabel(company.plan);
+                $('usersUsedCount').textContent = count;
+                $('usersMaxCount').textContent = company.max_users >= 999999 ? 'غير محدود' : company.max_users;
+            } catch (error) {
+                showMessage('فشل تحميل بيانات الباقة: ' + (error.message || ''), 'error');
+            }
+        }
+
+        $('copyCompanyCodeBtn').addEventListener('click', () => {
+            const code = $('companyInviteCode').textContent.trim();
+            if (!code || code === '——————') return;
+            navigator.clipboard.writeText(code).then(() => {
+                showMessage('تم نسخ الكود بنجاح', 'success');
+            }).catch(() => {
+                showMessage('تعذر نسخ الكود، انسخيه يدويًا', 'error');
+            });
         });
 
         checkExistingSession();
