@@ -383,9 +383,10 @@
                     <div class="card"><div class="card-title">قيد المتابعة</div><div class="card-number" id="inProgressLeads">0</div></div>
                     <div class="card"><div class="card-title">تم التحويل</div><div class="card-number" id="convertedLeads">0</div></div>
                     <div class="card"><div class="card-title">إجمالي الميزانيات</div><div class="card-number currency" id="leadsBudget">0 ر.س</div></div>
+                    <div class="card"><div class="card-title">🎯 حوض العملاء (غير موزعين)</div><div class="card-number" id="unassignedLeads">0</div></div>
                 </section>
                 <section class="workspace">
-                    <div class="toolbar"><h2>قائمة العملاء المحتملين <span id="leadsResultCount" style="color:#7a817e;font-size:13px;font-weight:normal"></span></h2></div>
+                    <div class="toolbar"><h2>قائمة العملاء المحتملين <span id="leadsResultCount" style="color:#7a817e;font-size:13px;font-weight:normal"></span></h2><div class="filters"><select class="status-filter" id="leadAssignmentFilter" aria-label="فلترة حالة التوزيع"><option value="">كل العملاء</option><option value="unassigned">🎯 غير موزعين (حوض العملاء)</option><option value="assigned">موزعين</option></select></div></div>
                     <div class="table-wrap"><table><thead><tr><th>الاسم</th><th>الهاتف</th><th>الشركة</th><th>الميزانية</th><th>السيلز</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="leadRows"></tbody></table></div>
                 </section>
             </section>
@@ -2282,7 +2283,7 @@
                     .order('created_at', { ascending: false });
 
                 if (CURRENT_USER_ROLE === 'sales') {
-                    query = query.eq('sales_id', CURRENT_USER_ID);
+                    query = query.or(`sales_id.eq.${CURRENT_USER_ID},sales_id.is.null`);
                 }
 
                 const { data, error } = await query;
@@ -2321,23 +2322,56 @@
             $('convertedLeads').textContent = leads.filter(l => l.status === 'converted').length;
             const totalBudget = leads.reduce((sum, l) => sum + (Number(l.budget) || 0), 0);
             $('leadsBudget').textContent = `${totalBudget.toLocaleString('en-US')} ر.س`;
-            $('leadsResultCount').textContent = `(${leads.length})`;
+            $('unassignedLeads').textContent = leads.filter(l => !l.sales_id).length;
 
-            $('leadRows').innerHTML = leads.length ? leads.map(lead => {
+            const assignmentFilter = $('leadAssignmentFilter').value;
+            const filteredLeads = assignmentFilter === 'unassigned' ? leads.filter(l => !l.sales_id)
+                : assignmentFilter === 'assigned' ? leads.filter(l => !!l.sales_id)
+                : leads;
+            $('leadsResultCount').textContent = `(${filteredLeads.length})`;
+
+            $('leadRows').innerHTML = filteredLeads.length ? filteredLeads.map(lead => {
                 const salesName = lead.sales_id ? (salesTeam.find(s => s.id === lead.sales_id)?.full_name || '—') : '—';
-                return `<tr data-id="${lead.id}">
+                return `<tr data-id="${lead.id}" ${!lead.sales_id ? 'style="background:#fff8e6;"' : ''}>
                     <td>${lead.name}</td>
                     <td><a class="contact-link" href="tel:${(lead.phone || '').replace(/\s/g, '')}">${lead.phone || '—'}</a></td>
                     <td>${lead.company || '—'}</td>
                     <td>${Number(lead.budget || 0).toLocaleString('en-US')} ر.س</td>
-                    <td>${salesName}</td>
+                    <td>${lead.sales_id ? salesName : '🎯 غير موزع'}</td>
                     <td><span class="status ${lead.status === 'not_interested' ? 'inactive' : ''}">${leadStatusLabel(lead.status)}</span></td>
                     <td><div class="actions">
+                        ${!lead.sales_id ? `<button class="icon-btn claim-lead" data-id="${lead.id}" aria-label="التقاط ${lead.name}">🎯 التقاط</button>` : ''}
                         <button class="icon-btn edit-lead" data-id="${lead.id}" aria-label="تعديل ${lead.name}">✎</button>
                         <button class="icon-btn delete-lead" data-id="${lead.id}" aria-label="حذف ${lead.name}" ${CURRENT_USER_ROLE !== 'admin' ? 'disabled' : ''}>⌫</button>
                     </div></td>
                 </tr>`;
             }).join('') : '<tr><td class="empty" colspan="7">لا توجد بيانات عملاء محتملين</td></tr>';
+        }
+
+        $('leadAssignmentFilter').addEventListener('change', renderLeads);
+
+        async function claimLead(id) {
+            const lead = leads.find(l => l.id === id);
+            if (!confirm(`هل تريد التقاط العميل ${lead ? lead.name : ''} ليصبح مسؤوليتك؟`)) return;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('leads')
+                    .update({ sales_id: CURRENT_USER_ID })
+                    .eq('id', id)
+                    .is('sales_id', null)
+                    .select();
+                if (error) throw error;
+                if (!data || !data.length) {
+                    showMessage('للأسف تم تعيين هذا العميل لسيلز آخر قبلك', 'error');
+                    await loadLeads();
+                    return;
+                }
+                if (lead) lead.sales_id = CURRENT_USER_ID;
+                renderLeads();
+                showMessage('تم التقاط العميل بنجاح، بقى مسؤوليتك دلوقتي', 'success');
+            } catch (error) {
+                showMessage('فشل التقاط العميل: ' + (error.message || ''), 'error');
+            }
         }
 
         function openLeadModal(lead) {
@@ -2368,7 +2402,9 @@
 
         $('leadRows').addEventListener('click', async event => {
             const button = event.target.closest('button');
-            if (button?.classList.contains('edit-lead')) {
+            if (button?.classList.contains('claim-lead')) {
+                await claimLead(Number(button.dataset.id));
+            } else if (button?.classList.contains('edit-lead')) {
                 openLeadModal(leads.find(l => l.id === Number(button.dataset.id)));
             } else if (button?.classList.contains('delete-lead') && !button.disabled) {
                 const id = Number(button.dataset.id);
