@@ -1009,11 +1009,58 @@
         function openDetailModal(customer) {
             selectedId = customer.id;
             $('detailModalTitle').textContent = `تفاصيل العميل: ${customer.name}`;
-            $('detailModalContent').innerHTML = `<div class="detail-profile"><span class="avatar">${initials(customer.name)}</span><div><strong>${customer.name}</strong><small>${statusLabel(customer.status)} · ${customer.company || '—'} · ${leadPriorityLabel(customer.lead_score)}</small></div></div><div class="detail-actions"><a class="contact-button" href="tel:${(customer.phone || '').replace(/\s/g, '')}">☎ اتصال</a><a class="contact-button whatsapp" href="https://wa.me/${(customer.whatsapp || '').replace(/\D/g, '')}" target="_blank">◉ واتساب</a></div><div class="detail-list"><div><span>اسم العميل</span><b>${customer.name}</b></div><div><span>اسم السيلز</span><b>${customer.sales_id ? (salesTeam.find(s => s.id === customer.sales_id)?.full_name || '—') : '—'}</b></div><div><span>رقم الهاتف</span><b>${customer.phone || '—'}</b></div><div><span>اسم الشركة</span><b>${customer.company || '—'}</b></div><div><span>الميزانية</span><b>${Number(customer.budget || 0).toLocaleString('en-US')} ر.س</b></div><div><span>رقم الواتساب</span><b>${customer.whatsapp || '—'}</b></div><div><span>التفاصيل</span><b>${customer.details || '—'}</b></div><div><span>الملاحظات</span><b>${customer.notes || '—'}</b></div></div>`;
+            $('detailModalContent').innerHTML = `<div class="detail-profile"><span class="avatar">${initials(customer.name)}</span><div><strong>${customer.name}</strong><small>${statusLabel(customer.status)} · ${customer.company || '—'} · ${leadPriorityLabel(customer.lead_score)}</small></div></div><div class="detail-actions"><a class="contact-button" href="tel:${(customer.phone || '').replace(/\s/g, '')}">☎ اتصال</a><a class="contact-button whatsapp" href="https://wa.me/${(customer.whatsapp || '').replace(/\D/g, '')}" target="_blank">◉ واتساب</a><button type="button" class="secondary" id="findMatchBtn">🔍 البحث عن عقار متوافق</button></div><div class="detail-list"><div><span>اسم العميل</span><b>${customer.name}</b></div><div><span>اسم السيلز</span><b>${customer.sales_id ? (salesTeam.find(s => s.id === customer.sales_id)?.full_name || '—') : '—'}</b></div><div><span>رقم الهاتف</span><b>${customer.phone || '—'}</b></div><div><span>اسم الشركة</span><b>${customer.company || '—'}</b></div><div><span>الميزانية</span><b>${Number(customer.budget || 0).toLocaleString('en-US')} ر.س</b></div><div><span>رقم الواتساب</span><b>${customer.whatsapp || '—'}</b></div><div><span>التفاصيل</span><b>${customer.details || '—'}</b></div><div><span>الملاحظات</span><b>${customer.notes || '—'}</b></div></div><div id="matchingPropertiesResults"></div>`;
             $('followupDate').value = new Date().toISOString().slice(0, 10);
             renderFollowups(customer);
             $('detailModal').classList.add('open');
         }
+
+        function propertyMatchesCustomer(property, customer, tolerance) {
+            if (customer.desired_property_type && property.property_type !== customer.desired_property_type) return false;
+            if (customer.city_id && property.city_id !== customer.city_id) return false;
+            if (customer.budget && Number(property.price || 0) > Number(customer.budget) * (1 + tolerance)) return false;
+            if (customer.desired_area && property.area) {
+                const diff = Math.abs(Number(property.area) - Number(customer.desired_area)) / Number(customer.desired_area);
+                if (diff > tolerance) return false;
+            }
+            if (customer.desired_rooms && property.property_type !== 'land' && property.rooms && Number(property.rooms) < Number(customer.desired_rooms)) return false;
+            return true;
+        }
+
+        function findMatchingProperties(customer) {
+            const available = properties.filter(p => p.status === 'available');
+            let matches = available.filter(p => propertyMatchesCustomer(p, customer, 0.15));
+            if (!matches.length) {
+                // نطاق مرونة أوسع لو مفيش تطابق دقيق
+                matches = available.filter(p => propertyMatchesCustomer(p, customer, 0.3));
+            }
+            return matches.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
+        }
+
+        async function renderMatchingProperties(customer) {
+            const container = $('matchingPropertiesResults');
+            if (!container) return;
+            container.innerHTML = '<p style="color:#7a817e;font-size:13px;padding:10px 0;">جاري البحث عن عقارات متوافقة...</p>';
+            if (propertiesLoadedOnce === false) await loadProperties();
+            await loadCitiesIfNeeded();
+            const matches = findMatchingProperties(customer);
+            if (!matches.length) {
+                container.innerHTML = '<div class="empty" style="padding:14px;">لا توجد عقارات متاحة تطابق احتياج هذا العميل حاليًا</div>';
+                return;
+            }
+            container.innerHTML = `<h3 style="margin:14px 0 8px;">🔍 عقارات متوافقة (${matches.length})</h3><div class="detail-list">` +
+                matches.map(p => {
+                    const cityName = cities.find(c => c.id === p.city_id)?.name || '—';
+                    return `<div><span>${p.title || p.name || 'عقار'} — ${cityName}</span><b>${Number(p.price || 0).toLocaleString('en-US')} ر.س · ${p.area ? Number(p.area).toLocaleString('en-US') + ' م²' : '—'} · ${p.property_type === 'land' ? '—' : (p.rooms ?? '—')} غرف</b></div>`;
+                }).join('') + '</div>';
+        }
+
+        $('detailModalContent').addEventListener('click', async event => {
+            if (event.target && event.target.id === 'findMatchBtn') {
+                const customer = customers.find(c => c.id === selectedId);
+                if (customer) await renderMatchingProperties(customer);
+            }
+        });
         function renderFollowups(customer) {
             const followUps = customer.follow_ups || [];
             $('followupList').innerHTML = followUps.length ? followUps.slice().reverse().map(followUp => `<article class="followup-item"><strong>${followUp.type}</strong><p>${followUp.notes}</p><time>${followUp.date}</time></article>`).join('') : '<div class="empty" style="padding:18px">لا توجد متابعات مسجلة لهذا العميل</div>';
