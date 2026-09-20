@@ -322,6 +322,25 @@
                     <input type="file" id="logoFileInput" accept="image/*">
                 </div>
             </div>
+            <div class="field" id="companyCurrencyField" style="margin-bottom:8px;">
+                <label>عملة النظام (المدير فقط)</label>
+                <select id="companyCurrencySelect" style="margin-top:8px;">
+                    <option value="ج.م">جنيه مصري (ج.م)</option>
+                    <option value="ر.س">ريال سعودي (ر.س)</option>
+                    <option value="د.إ">درهم إماراتي (د.إ)</option>
+                    <option value="د.ك">دينار كويتي (د.ك)</option>
+                    <option value="$">دولار أمريكي ($)</option>
+                </select>
+            </div>
+            <div class="field" id="whatsappBotField" style="margin-bottom:8px;">
+                <label>🤖 بوت الواتساب (المدير فقط)</label>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+                    <input type="text" id="whatsappBotTokenInput" readonly style="flex:1;font-size:12px;" placeholder="جاري التحميل...">
+                    <button type="button" class="secondary" id="copyBotTokenBtn" style="padding:8px 10px;">📋 نسخ</button>
+                </div>
+                <button type="button" class="secondary" id="testWhatsappBotBtn" style="margin-top:8px;">🤖 اختبار استقبال عميل تجريبي</button>
+                <p id="whatsappBotTestStatus" style="font-size:12px;color:var(--muted);margin-top:6px;"></p>
+            </div>
             <p id="settingsSaveStatus" style="font-size:13px;color:#7a817e;margin-top:10px;"></p>
         </div>
     </div>
@@ -343,6 +362,7 @@
                 <li data-section="supportSection">🎧 خدمة العملاء والدعم الفني</li>
                 <li data-section="leaderboardSection">🏆 لوحة الصدارة</li>
                 <li data-section="reportsSection" id="reportsMenuItem">📊 التقارير والإحصائيات</li>
+                <li data-section="trashSection" id="trashMenuItem">🗑 سلة المهملات</li>
                 <li data-section="areasSection" id="areasMenuItem">📍 المدن والمناطق</li>
                 <li data-section="attendanceSection">🕐 الحضور والانصراف</li>
                 <li data-section="developersSection">🏗 المقاولين والمطورين</li>
@@ -382,7 +402,7 @@
                     <div class="card"><div class="card-title">إجمالي العملاء المحتملين</div><div class="card-number" id="totalLeads">0</div></div>
                     <div class="card"><div class="card-title">قيد المتابعة</div><div class="card-number" id="inProgressLeads">0</div></div>
                     <div class="card"><div class="card-title">تم التحويل</div><div class="card-number" id="convertedLeads">0</div></div>
-                    <div class="card"><div class="card-title">إجمالي الميزانيات</div><div class="card-number currency" id="leadsBudget">0 ر.س</div></div>
+                    <div class="card"><div class="card-title">إجمالي الميزانيات</div><div class="card-number currency" id="leadsBudget">0</div></div>
                     <div class="card"><div class="card-title">🎯 حوض العملاء (غير موزعين)</div><div class="card-number" id="unassignedLeads">0</div></div>
                 </section>
                 <section class="workspace">
@@ -419,7 +439,7 @@
                 </section>
                 <section class="workspace">
                     <div class="toolbar"><h2>قائمة العقارات <span id="propertiesResultCount" style="color:#7a817e;font-size:13px;font-weight:normal"></span></h2><div class="filters"><select class="status-filter" id="propertyTypeFilter" aria-label="فلترة نوع العقار"><option value="">كل الأنواع</option><option value="apartment">شقق</option><option value="villa">فيلات</option><option value="land">أراضي</option><option value="mall">مولات/تجاري</option><option value="office">مكاتب</option></select></div></div>
-                    <div class="table-wrap"><table><thead><tr><th>العقار</th><th>النوع</th><th>المنطقة</th><th>المساحة</th><th>الغرف</th><th>السعر</th><th>السيلز</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="propertyRows"></tbody></table></div>
+                    <div class="table-wrap"><table><thead><tr><th>العقار</th><th>النوع</th><th>التصنيف</th><th>المنطقة</th><th>المساحة</th><th>الغرف</th><th>السعر</th><th>السيلز</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="propertyRows"></tbody></table></div>
                 </section>
             </section>
             <section id="dealsSection" class="app-section">
@@ -434,8 +454,8 @@
                     <div class="card"><div class="card-title">إجمالي الصفقات</div><div class="card-number" id="totalDeals">0</div></div>
                     <div class="card"><div class="card-title">قيد التفاوض</div><div class="card-number" id="negotiationDeals">0</div></div>
                     <div class="card"><div class="card-title">صفقات فائزة</div><div class="card-number" id="wonDeals">0</div></div>
-                    <div class="card"><div class="card-title">إجمالي القيمة</div><div class="card-number currency" id="dealsValue">0 ر.س</div></div>
-                    <div class="card"><div class="card-title">إجمالي العمولات المستحقة</div><div class="card-number currency" id="totalCommissions">0 ر.س</div></div>
+                    <div class="card"><div class="card-title">إجمالي القيمة</div><div class="card-number currency" id="dealsValue">0</div></div>
+                    <div class="card"><div class="card-title">إجمالي العمولات المستحقة</div><div class="card-number currency" id="totalCommissions">0</div></div>
                 </section>
                 <section class="workspace">
                     <div class="toolbar"><h2>قائمة الصفقات <span id="dealsResultCount" style="color:#7a817e;font-size:13px;font-weight:normal"></span></h2></div>
@@ -447,10 +467,10 @@
                     <div><h1>الأقساط والتحصيل</h1><p>تابعي مواعيد استحقاق أقساط العملاء وحصّليها أول بأول</p></div>
                 </header>
                 <section class="cards" aria-label="إحصائيات الأقساط">
-                    <div class="card"><div class="card-title">إجمالي المستحق</div><div class="card-number currency" id="installmentsTotalDue">0 ر.س</div></div>
+                    <div class="card"><div class="card-title">إجمالي المستحق</div><div class="card-number currency" id="installmentsTotalDue">0</div></div>
                     <div class="card"><div class="card-title">أقساط متأخرة</div><div class="card-number" id="installmentsOverdueCount">0</div></div>
                     <div class="card"><div class="card-title">مستحقة خلال 7 أيام</div><div class="card-number" id="installmentsUpcomingCount">0</div></div>
-                    <div class="card"><div class="card-title">تم تحصيله</div><div class="card-number currency" id="installmentsCollected">0 ر.س</div></div>
+                    <div class="card"><div class="card-title">تم تحصيله</div><div class="card-number currency" id="installmentsCollected">0</div></div>
                 </section>
                 <section class="workspace">
                     <div class="toolbar">
@@ -476,7 +496,7 @@
                     <div class="card"><div class="card-title">إجمالي التشطيبات</div><div class="card-number" id="totalFinishes">0</div></div>
                     <div class="card"><div class="card-title">قيد التنفيذ</div><div class="card-number" id="inProgressFinishes">0</div></div>
                     <div class="card"><div class="card-title">مكتمل</div><div class="card-number" id="completedFinishes">0</div></div>
-                    <div class="card"><div class="card-title">إجمالي التكلفة</div><div class="card-number currency" id="finishesCost">0 ر.س</div></div>
+                    <div class="card"><div class="card-title">إجمالي التكلفة</div><div class="card-number currency" id="finishesCost">0</div></div>
                 </section>
                 <section class="workspace">
                     <div class="toolbar"><h2>قائمة التشطيبات <span id="finishesResultCount" style="color:#7a817e;font-size:13px;font-weight:normal"></span></h2></div>
@@ -572,6 +592,15 @@
                 <section class="workspace" style="margin:0 16px 16px;">
                     <div class="toolbar"><h2>العمولات المستحقة لكل سيلز</h2></div>
                     <div class="table-wrap"><table><thead><tr><th>السيلز</th><th>عدد الصفقات الفائزة</th><th>إجمالي العمولات</th></tr></thead><tbody id="commissionRows"></tbody></table></div>
+                </section>
+            </section>
+            <section id="trashSection" class="app-section">
+                <header class="header">
+                    <div><h1>🗑 سلة المهملات</h1><p>العناصر المحذوفة (عملاء، عملاء محتملين، ملاك، عقارات، صفقات) — يقدر المدير وحده يستعيدها أو يحذفها نهائيًا</p></div>
+                </header>
+                <section class="workspace">
+                    <div class="toolbar"><h2>العناصر المحذوفة <span id="trashResultCount" style="color:#7a817e;font-size:13px;font-weight:normal"></span></h2></div>
+                    <div class="table-wrap"><table><thead><tr><th>النوع</th><th>الاسم/العنوان</th><th>من حذفه</th><th>تاريخ الحذف</th><th>إجراءات</th></tr></thead><tbody id="trashRows"></tbody></table></div>
                 </section>
             </section>
             <section id="areasSection" class="app-section">
@@ -754,7 +783,9 @@
                 <div class="field"><label for="propertyRooms">عدد الغرف</label><input id="propertyRooms" type="number" min="0"></div>
                 <div class="field"><label for="propertyPrice">السعر</label><input id="propertyPrice" type="number" min="0"></div>
                 <div class="field"><label for="propertySalesSelect">السيلز المسؤول</label><select id="propertySalesSelect"><option value="">بدون تحديد</option></select></div>
-                <div class="field"><label for="propertyOwnerSelect">مالك العقار</label><select id="propertyOwnerSelect"><option value="">بدون تحديد</option></select></div>
+                <div class="field"><label for="propertyOwnershipCategory">تصنيف العقار</label><select id="propertyOwnershipCategory"><option value="resale">ريسيل (إعادة بيع)</option><option value="primary">بريماري (مطور)</option></select></div>
+                <div class="field" id="propertyOwnerField"><label for="propertyOwnerSelect">مالك العقار *</label><select id="propertyOwnerSelect"><option value="">بدون تحديد</option></select></div>
+                <div class="field" id="propertyDeveloperField" style="display:none;"><label for="propertyDeveloperSelect">المطور العقاري المسؤول *</label><select id="propertyDeveloperSelect"><option value="">اختاري المطور</option></select></div>
                 <div class="field"><label for="propertyFinishStatus">حالة التشطيب</label><select id="propertyFinishStatus"><option value="unfinished">غير مشطب</option><option value="semi_finished">نصف تشطيب</option><option value="finished">تشطيب كامل</option></select></div>
                 <div class="field"><label for="propertyStatus">حالة العقار</label><select id="propertyStatus"><option value="available">متاح</option><option value="reserved">محجوز</option><option value="sold">مباع</option></select></div>
                 <div class="field full"><label for="propertyNotes">ملاحظات</label><textarea id="propertyNotes" placeholder="أضف ملاحظات عن العقار..."></textarea></div>
@@ -905,12 +936,14 @@
         let CURRENT_USER_ID = null;
         let CURRENT_USER_AVATAR = null;
         let CURRENT_COMPANY_LOGO = null;
+        let CURRENT_CURRENCY = 'ج.م';
 
         let customers = []; // هتتملى من قاعدة البيانات
         let selectedId = null;
         const $ = (id) => document.getElementById(id);
         const initials = (name) => (name || '').split(' ').slice(0, 2).map(word => word[0]).join('');
-        const formatBudget = (budget) => `${Number(budget || 0).toLocaleString('en-US')} ر.س`;
+        const formatMoney = (amount) => `${Number(amount || 0).toLocaleString('en-US')} ${CURRENT_CURRENCY}`;
+        const formatBudget = formatMoney;
         const statusLabel = (status) => status === 'active' ? 'نشط' : 'غير نشط';
         const leadPriorityLabel = (score) => { const s = Number(score ?? 50); return s >= 70 ? '🔴 عالية' : s >= 40 ? '🟡 متوسطة' : '🟢 منخفضة'; };
         const leadPriorityKey = (score) => { const s = Number(score ?? 50); return s >= 70 ? 'high' : s >= 40 ? 'medium' : 'low'; };
@@ -925,6 +958,7 @@
                     .from('customers')
                     .select('*')
                     .eq('company_id', CURRENT_COMPANY_ID)
+                    .is('deleted_at', null)
                     .order('created_at', { ascending: false });
 
                 // القاعدة الأساسية: السيلز يشوف عملاءه بس، المدير يشوف كل حاجة
@@ -978,6 +1012,117 @@
             if (error) throw error;
         }
 
+        // =====================================================
+        // سلة المهملات: حذف ذكي (Soft Delete) بدل الحذف النهائي
+        // =====================================================
+        const TRASH_TABLES = {
+            customers: { label: 'عميل', arraySetter: (arr) => { customers = arr; }, getArray: () => customers, titleOf: (r) => r.name },
+            leads: { label: 'عميل محتمل', arraySetter: (arr) => { leads = arr; }, getArray: () => leads, titleOf: (r) => r.name },
+            owners: { label: 'مالك', arraySetter: (arr) => { owners = arr; }, getArray: () => owners, titleOf: (r) => r.name },
+            properties: { label: 'عقار', arraySetter: (arr) => { properties = arr; }, getArray: () => properties, titleOf: (r) => r.title },
+            deals: { label: 'صفقة', arraySetter: (arr) => { deals = arr; }, getArray: () => deals, titleOf: (r) => {
+                const customerName = customers.find(c => c.id === r.customer_id)?.name || (trashRecordsCache.find(t => t.table === 'customers' && t.id === r.customer_id)?.name) || 'عميل';
+                const propertyTitle = properties.find(p => p.id === r.property_id)?.title || '';
+                return `صفقة: ${customerName}${propertyTitle ? ' — ' + propertyTitle : ''}`;
+            } }
+        };
+
+        async function softDeleteRecord(table, id) {
+            const { error } = await supabaseClient
+                .from(table)
+                .update({ deleted_at: new Date().toISOString(), deleted_by: CURRENT_USER_ID })
+                .eq('id', id);
+            if (error) throw error;
+        }
+
+        let trashItems = [];
+        let trashLoadedOnce = false;
+        let trashRecordsCache = [];
+
+        async function loadTrash() {
+            try {
+                const results = await Promise.all(Object.keys(TRASH_TABLES).map(async table => {
+                    const { data, error } = await supabaseClient
+                        .from(table)
+                        .select('*')
+                        .eq('company_id', CURRENT_COMPANY_ID)
+                        .not('deleted_at', 'is', null)
+                        .order('deleted_at', { ascending: false });
+                    if (error) return [];
+                    return (data || []).map(record => ({ ...record, __table: table }));
+                }));
+                trashItems = results.flat();
+                trashRecordsCache = trashItems;
+                trashLoadedOnce = true;
+                renderTrash();
+            } catch (error) {
+                showMessage('فشل تحميل سلة المهملات: ' + (error.message || ''), 'error');
+            }
+        }
+
+        function renderTrash() {
+            const container = $('trashRows');
+            if (!container) return;
+            container.innerHTML = trashItems.length ? trashItems.map(item => {
+                const config = TRASH_TABLES[item.__table];
+                const deletedByName = salesTeam.find(s => s.id === item.deleted_by)?.full_name
+                    || companyAdmins.find(a => a.id === item.deleted_by)?.full_name || '—';
+                const deletedDate = item.deleted_at ? new Date(item.deleted_at).toLocaleString('en-GB') : '—';
+                let title = '—';
+                try { title = config.titleOf(item) || '—'; } catch (e) { title = '—'; }
+                return `<tr data-id="${item.id}" data-table="${item.__table}">
+                    <td>${config.label}</td>
+                    <td>${title}</td>
+                    <td>${deletedByName}</td>
+                    <td>${deletedDate}</td>
+                    <td><div class="actions">
+                        <button class="icon-btn restore-item" data-id="${item.id}" data-table="${item.__table}" aria-label="استعادة">↩ استعادة</button>
+                        <button class="icon-btn hard-delete-item" data-id="${item.id}" data-table="${item.__table}" aria-label="حذف نهائي">🗑 حذف نهائي</button>
+                    </div></td>
+                </tr>`;
+            }).join('') : '<tr><td class="empty" colspan="5">سلة المهملات فاضية</td></tr>';
+            $('trashResultCount').textContent = `(${trashItems.length})`;
+        }
+
+        document.addEventListener('click', async event => {
+            const restoreBtn = event.target.closest('.restore-item');
+            const hardDeleteBtn = event.target.closest('.hard-delete-item');
+            if (restoreBtn) {
+                if (CURRENT_USER_ROLE !== 'admin') return;
+                const id = Number(restoreBtn.dataset.id);
+                const table = restoreBtn.dataset.table;
+                try {
+                    const { error } = await supabaseClient.from(table).update({ deleted_at: null, deleted_by: null }).eq('id', id);
+                    if (error) throw error;
+                    trashItems = trashItems.filter(i => !(i.id === id && i.__table === table));
+                    renderTrash();
+                    showMessage('تم استعادة العنصر بنجاح', 'success');
+                    // إعادة تحميل القسم الأصلي لو محمّل بالفعل عشان يظهر فيه تاني
+                    if (table === 'customers') loadCustomers();
+                    else if (table === 'leads' && leadsLoadedOnce) loadLeads();
+                    else if (table === 'owners' && ownersLoadedOnce) loadOwners();
+                    else if (table === 'properties' && propertiesLoadedOnce) loadProperties();
+                    else if (table === 'deals' && dealsLoadedOnce) loadDeals();
+                } catch (error) {
+                    showMessage('فشل استعادة العنصر: ' + (error.message || ''), 'error');
+                }
+            } else if (hardDeleteBtn) {
+                if (CURRENT_USER_ROLE !== 'admin') return;
+                const id = Number(hardDeleteBtn.dataset.id);
+                const table = hardDeleteBtn.dataset.table;
+                if (!confirm('تحذير: الحذف النهائي لا يمكن التراجع عنه أبدًا. هل أنتِ متأكدة؟')) return;
+                try {
+                    const { error } = await supabaseClient.from(table).delete().eq('id', id);
+                    if (error) throw error;
+                    trashItems = trashItems.filter(i => !(i.id === id && i.__table === table));
+                    renderTrash();
+                    showMessage('تم الحذف النهائي بنجاح', 'success');
+                } catch (error) {
+                    showMessage('فشل الحذف النهائي: ' + (error.message || ''), 'error');
+                }
+            }
+        });
+
         function render() {
             const query = $('searchInput').value.trim().toLowerCase();
             const status = $('statusFilter').value;
@@ -995,12 +1140,12 @@
             $('salesSummary').innerHTML = `${Object.entries(sales).length ? Object.entries(sales).sort(([, first], [, second]) => second - first).map(([name, count]) => `<div class="sales-item"><span>${name}</span><strong>${count} عميل</strong></div>`).join('') : ''}`;
             $('customerRows').innerHTML = filtered.length ? filtered.map(customer => {
                 const salesName = customer.sales_id ? (salesTeam.find(s => s.id === customer.sales_id)?.full_name || '—') : '—';
-                return `<tr class="${customer.id === selectedId ? 'selected' : ''}" data-id="${customer.id}"><td><div class="customer-name"><span class="avatar">${initials(customer.name)}</span>${customer.name}</div></td><td><a class="contact-link" href="tel:${(customer.phone || '').replace(/\s/g, '')}">${customer.phone || '—'}</a></td><td>${customer.company || '—'}</td><td>${Number(customer.budget || 0).toLocaleString('en-US')} ر.س</td><td>${salesName}</td><td>${customer.last_contact || '—'}</td><td><span class="status ${customer.status === 'active' ? '' : 'inactive'}">${statusLabel(customer.status)}</span></td><td>${leadPriorityLabel(customer.lead_score)}</td><td><div class="actions"><button class="icon-btn edit" data-id="${customer.id}" aria-label="تعديل ${customer.name}">✎</button><button class="icon-btn delete" data-id="${customer.id}" aria-label="حذف ${customer.name}">⌫</button></div></td></tr>`;
+                return `<tr class="${customer.id === selectedId ? 'selected' : ''}" data-id="${customer.id}"><td><div class="customer-name"><span class="avatar">${initials(customer.name)}</span>${customer.name}</div></td><td><a class="contact-link" href="tel:${(customer.phone || '').replace(/\s/g, '')}">${customer.phone || '—'}</a></td><td>${customer.company || '—'}</td><td>${Number(customer.budget || 0).toLocaleString('en-US')} ${CURRENT_CURRENCY}</td><td>${salesName}</td><td>${customer.last_contact || '—'}</td><td><span class="status ${customer.status === 'active' ? '' : 'inactive'}">${statusLabel(customer.status)}</span></td><td>${leadPriorityLabel(customer.lead_score)}</td><td><div class="actions"><button class="icon-btn edit" data-id="${customer.id}" aria-label="تعديل ${customer.name}">✎</button><button class="icon-btn delete" data-id="${customer.id}" aria-label="حذف ${customer.name}">⌫</button></div></td></tr>`;
             }).join('') : '<tr><td class="empty" colspan="9">لا توجد نتائج</td></tr>';
             const selected = filtered.find(customer => customer.id === selectedId) || filtered[0];
             if (selected) {
                 selectedId = selected.id;
-                $('customerDetails').innerHTML = `<div><h3>تفاصيل العميل</h3><div class="detail-profile"><span class="avatar">${initials(selected.name)}</span><div><strong>${selected.name}</strong><small>${selected.company || '—'} · ${statusLabel(selected.status)} · ${leadPriorityLabel(selected.lead_score)}</small></div></div><div class="detail-list"><div><span>درجة جدية العميل</span><b>${selected.lead_score ?? 50} / 100</b></div><div><span>رقم الهاتف</span><b><a class="contact-link" href="tel:${(selected.phone || '').replace(/\s/g, '')}">${selected.phone || '—'}</a></b></div><div><span>رقم الواتساب</span><b><a class="contact-link" href="https://wa.me/${(selected.whatsapp || '').replace(/\D/g, '')}" target="_blank">${selected.whatsapp || '—'}</a></b></div><div><span>الميزانية</span><b>${Number(selected.budget || 0).toLocaleString('en-US')} ر.س</b></div><div><span>اسم السيلز</span><b>${selected.sales_id ? (salesTeam.find(s => s.id === selected.sales_id)?.full_name || '—') : '—'}</b></div><div><span>البريد الإلكتروني</span><b>${selected.email || '—'}</b></div></div></div><div class="activity"><h3>التفاصيل والملاحظات</h3><p>${selected.details || 'لا توجد تفاصيل مسجلة.'}<time>${selected.notes || 'لا توجد ملاحظات مسجلة.'} · ${selected.last_contact || ''}</time></p></div>`;
+                $('customerDetails').innerHTML = `<div><h3>تفاصيل العميل</h3><div class="detail-profile"><span class="avatar">${initials(selected.name)}</span><div><strong>${selected.name}</strong><small>${selected.company || '—'} · ${statusLabel(selected.status)} · ${leadPriorityLabel(selected.lead_score)}</small></div></div><div class="detail-list"><div><span>درجة جدية العميل</span><b>${selected.lead_score ?? 50} / 100</b></div><div><span>رقم الهاتف</span><b><a class="contact-link" href="tel:${(selected.phone || '').replace(/\s/g, '')}">${selected.phone || '—'}</a></b></div><div><span>رقم الواتساب</span><b><a class="contact-link" href="https://wa.me/${(selected.whatsapp || '').replace(/\D/g, '')}" target="_blank">${selected.whatsapp || '—'}</a></b></div><div><span>الميزانية</span><b>${Number(selected.budget || 0).toLocaleString('en-US')} ${CURRENT_CURRENCY}</b></div><div><span>اسم السيلز</span><b>${selected.sales_id ? (salesTeam.find(s => s.id === selected.sales_id)?.full_name || '—') : '—'}</b></div><div><span>البريد الإلكتروني</span><b>${selected.email || '—'}</b></div></div></div><div class="activity"><h3>التفاصيل والملاحظات</h3><p>${selected.details || 'لا توجد تفاصيل مسجلة.'}<time>${selected.notes || 'لا توجد ملاحظات مسجلة.'} · ${selected.last_contact || ''}</time></p></div>`;
             } else {
                 $('customerDetails').innerHTML = '<div class="empty" style="grid-column:1/-1">اختر عميلاً لعرض تفاصيله</div>';
             }
@@ -1009,7 +1154,7 @@
         function openDetailModal(customer) {
             selectedId = customer.id;
             $('detailModalTitle').textContent = `تفاصيل العميل: ${customer.name}`;
-            $('detailModalContent').innerHTML = `<div class="detail-profile"><span class="avatar">${initials(customer.name)}</span><div><strong>${customer.name}</strong><small>${statusLabel(customer.status)} · ${customer.company || '—'} · ${leadPriorityLabel(customer.lead_score)}</small></div></div><div class="detail-actions"><a class="contact-button" href="tel:${(customer.phone || '').replace(/\s/g, '')}">☎ اتصال</a><a class="contact-button whatsapp" href="https://wa.me/${(customer.whatsapp || '').replace(/\D/g, '')}" target="_blank">◉ واتساب</a><button type="button" class="secondary" id="findMatchBtn">🔍 البحث عن عقار متوافق</button></div><div class="detail-list"><div><span>اسم العميل</span><b>${customer.name}</b></div><div><span>اسم السيلز</span><b>${customer.sales_id ? (salesTeam.find(s => s.id === customer.sales_id)?.full_name || '—') : '—'}</b></div><div><span>رقم الهاتف</span><b>${customer.phone || '—'}</b></div><div><span>اسم الشركة</span><b>${customer.company || '—'}</b></div><div><span>الميزانية</span><b>${Number(customer.budget || 0).toLocaleString('en-US')} ر.س</b></div><div><span>رقم الواتساب</span><b>${customer.whatsapp || '—'}</b></div><div><span>التفاصيل</span><b>${customer.details || '—'}</b></div><div><span>الملاحظات</span><b>${customer.notes || '—'}</b></div></div><div id="matchingPropertiesResults"></div>`;
+            $('detailModalContent').innerHTML = `<div class="detail-profile"><span class="avatar">${initials(customer.name)}</span><div><strong>${customer.name}</strong><small>${statusLabel(customer.status)} · ${customer.company || '—'} · ${leadPriorityLabel(customer.lead_score)}</small></div></div><div class="detail-actions"><a class="contact-button" href="tel:${(customer.phone || '').replace(/\s/g, '')}">☎ اتصال</a><a class="contact-button whatsapp" href="https://wa.me/${(customer.whatsapp || '').replace(/\D/g, '')}" target="_blank">◉ واتساب</a><button type="button" class="secondary" id="findMatchBtn">🔍 البحث عن عقار متوافق</button></div><div class="detail-list"><div><span>اسم العميل</span><b>${customer.name}</b></div><div><span>اسم السيلز</span><b>${customer.sales_id ? (salesTeam.find(s => s.id === customer.sales_id)?.full_name || '—') : '—'}</b></div><div><span>رقم الهاتف</span><b>${customer.phone || '—'}</b></div><div><span>اسم الشركة</span><b>${customer.company || '—'}</b></div><div><span>الميزانية</span><b>${Number(customer.budget || 0).toLocaleString('en-US')} ${CURRENT_CURRENCY}</b></div><div><span>رقم الواتساب</span><b>${customer.whatsapp || '—'}</b></div><div><span>التفاصيل</span><b>${customer.details || '—'}</b></div><div><span>الملاحظات</span><b>${customer.notes || '—'}</b></div></div><div id="matchingPropertiesResults"></div>`;
             $('followupDate').value = new Date().toISOString().slice(0, 10);
             renderFollowups(customer);
             $('detailModal').classList.add('open');
@@ -1051,7 +1196,7 @@
             container.innerHTML = `<h3 style="margin:14px 0 8px;">🔍 عقارات متوافقة (${matches.length})</h3><div class="detail-list">` +
                 matches.map(p => {
                     const cityName = cities.find(c => c.id === p.city_id)?.name || '—';
-                    return `<div><span>${p.title || p.name || 'عقار'} — ${cityName}</span><b>${Number(p.price || 0).toLocaleString('en-US')} ر.س · ${p.area ? Number(p.area).toLocaleString('en-US') + ' م²' : '—'} · ${p.property_type === 'land' ? '—' : (p.rooms ?? '—')} غرف</b></div>`;
+                    return `<div><span>${p.title || p.name || 'عقار'} — ${cityName}</span><b>${Number(p.price || 0).toLocaleString('en-US')} ${CURRENT_CURRENCY} · ${p.area ? Number(p.area).toLocaleString('en-US') + ' م²' : '—'} · ${p.property_type === 'land' ? '—' : (p.rooms ?? '—')} غرف</b></div>`;
                 }).join('') + '</div>';
         }
 
@@ -1153,13 +1298,13 @@
             } else if (button?.classList.contains('delete')) {
                 const id = Number(button.dataset.id);
                 const customer = customers.find(item => item.id === id);
-                if (confirm(`هل تريد حذف العميل ${customer.name}؟`)) {
+                if (confirm(`هل تريد نقل العميل ${customer.name} إلى سلة المهملات؟`)) {
                     try {
-                        await deleteCustomerFromDb(id);
+                        await softDeleteRecord('customers', id);
                         customers = customers.filter(item => item.id !== id);
                         if (selectedId === id) selectedId = customers[0]?.id;
                         render();
-                        showMessage('تم حذف العميل بنجاح', 'success');
+                        showMessage('تم نقل العميل إلى سلة المهملات', 'success');
                     } catch (error) {
                         showMessage('حدث خطأ أثناء الحذف: ' + (error.message || ''), 'error');
                     }
@@ -1277,6 +1422,7 @@
                     .from('owners')
                     .select('*')
                     .eq('company_id', CURRENT_COMPANY_ID)
+                    .is('deleted_at', null)
                     .order('created_at', { ascending: false });
                 if (CURRENT_USER_ROLE === 'sales') {
                     query = query.eq('sales_id', CURRENT_USER_ID);
@@ -1326,7 +1472,7 @@
             $('ownerRows').innerHTML = filtered.length ? filtered.map(owner => {
                 const cityName = cities.find(c => c.id === owner.city_id)?.name || '—';
                 const status = owner.verification_status || 'pending';
-                return `<tr data-id="${owner.id}"><td><div class="customer-name"><span class="avatar">${initials(owner.name)}</span>${owner.name}</div></td><td><a class="contact-link" href="tel:${(owner.phone || '').replace(/\s/g, '')}">${owner.phone || '—'}</a></td><td>${cityName}</td><td>${owner.source || '—'}</td><td>${owner.relationship_score ?? 50}</td><td><span class="status ${ownerVerificationClass(status)}">${ownerVerificationLabel(status)}</span></td><td><div class="actions"><button class="icon-btn edit-owner" data-id="${owner.id}" aria-label="تعديل ${owner.name}">✎</button><button class="icon-btn delete-owner" data-id="${owner.id}" aria-label="حذف ${owner.name}" ${CURRENT_USER_ROLE !== 'admin' ? 'disabled' : ''}>⌫</button></div></td></tr>`;
+                return `<tr data-id="${owner.id}"><td><div class="customer-name"><span class="avatar">${initials(owner.name)}</span>${owner.name}</div></td><td><a class="contact-link" href="tel:${(owner.phone || '').replace(/\s/g, '')}">${owner.phone || '—'}</a></td><td>${cityName}</td><td>${owner.source || '—'}</td><td>${owner.relationship_score ?? 50}</td><td><span class="status ${ownerVerificationClass(status)}">${ownerVerificationLabel(status)}</span></td><td><div class="actions"><button class="icon-btn edit-owner" data-id="${owner.id}" aria-label="تعديل ${owner.name}">✎</button><button class="icon-btn delete-owner" data-id="${owner.id}" aria-label="حذف ${owner.name}">⌫</button></div></td></tr>`;
             }).join('') : '<tr><td class="empty" colspan="7">لا يوجد ملاك مسجلين بعد</td></tr>';
         }
 
@@ -1405,12 +1551,12 @@
             } else if (button?.classList.contains('delete-owner') && !button.disabled) {
                 const id = Number(button.dataset.id);
                 const owner = owners.find(o => o.id === id);
-                if (confirm(`هل تريدين حذف المالك ${owner.name}؟`)) {
+                if (confirm(`هل تريدين نقل المالك ${owner.name} إلى سلة المهملات؟`)) {
                     try {
-                        await deleteOwnerFromDb(id);
+                        await softDeleteRecord('owners', id);
                         owners = owners.filter(o => o.id !== id);
                         renderOwners();
-                        showMessage('تم حذف المالك بنجاح', 'success');
+                        showMessage('تم نقل المالك إلى سلة المهملات', 'success');
                     } catch (error) {
                         showMessage('حدث خطأ أثناء الحذف: ' + (error.message || ''), 'error');
                     }
@@ -1502,6 +1648,30 @@
             return data;
         }
 
+        let CURRENT_BOT_TOKEN = null;
+
+        async function loadCompanySettings() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('companies')
+                    .select('logo_url, currency, whatsapp_bot_token')
+                    .eq('id', CURRENT_COMPANY_ID)
+                    .single();
+                if (error) throw error;
+                CURRENT_COMPANY_LOGO = data.logo_url || null;
+                CURRENT_CURRENCY = data.currency || 'ج.م';
+                CURRENT_BOT_TOKEN = data.whatsapp_bot_token || null;
+                if (CURRENT_COMPANY_LOGO) {
+                    $('settingsLogoPreview').src = CURRENT_COMPANY_LOGO;
+                    $('settingsLogoPreview').style.display = 'inline-block';
+                }
+                $('companyCurrencySelect').value = CURRENT_CURRENCY;
+                $('whatsappBotTokenInput').value = CURRENT_BOT_TOKEN || 'لسه معملتيش كود الـ SQL الخاص بميزة بوت الواتساب';
+            } catch (error) {
+                CURRENT_CURRENCY = CURRENT_CURRENCY || 'ج.م';
+            }
+        }
+
         async function startApp() {
             $('loginScreen').classList.add('hidden');
             $('appRoot').classList.remove('hidden');
@@ -1511,9 +1681,13 @@
                 $('userAvatarImg').style.display = 'inline-block';
             }
             $('companyLogoField').style.display = (CURRENT_USER_ROLE === 'admin') ? 'block' : 'none';
+            $('companyCurrencyField').style.display = (CURRENT_USER_ROLE === 'admin') ? 'block' : 'none';
+            $('whatsappBotField').style.display = (CURRENT_USER_ROLE === 'admin') ? 'block' : 'none';
             $('areasMenuItem').style.display = (CURRENT_USER_ROLE === 'admin') ? '' : 'none';
             $('planMenuItem').style.display = (CURRENT_USER_ROLE === 'admin') ? '' : 'none';
             $('reportsMenuItem').style.display = (CURRENT_USER_ROLE === 'admin') ? '' : 'none';
+            $('trashMenuItem').style.display = (CURRENT_USER_ROLE === 'admin') ? '' : 'none';
+            await loadCompanySettings();
             await loadSalesTeam();
             await loadCompanyAdmins();
             loadCustomers();
@@ -1578,6 +1752,9 @@
                     if (item.dataset.section === 'reportsSection') {
                         loadReportsData();
                     }
+                    if (item.dataset.section === 'trashSection') {
+                        loadTrash();
+                    }
                 });
             });
         }
@@ -1636,14 +1813,18 @@
         // =====================================================
         let notifications = [];
         let companyAdminIds = [];
+        let companyAdmins = [];
 
         async function loadCompanyAdmins() {
             const { data, error } = await supabaseClient
                 .from('profiles')
-                .select('id')
+                .select('id, full_name')
                 .eq('company_id', CURRENT_COMPANY_ID)
                 .eq('role', 'admin');
-            if (!error) companyAdminIds = data.map(a => a.id);
+            if (!error) {
+                companyAdminIds = data.map(a => a.id);
+                companyAdmins = data;
+            }
         }
 
         async function createNotification(userId, title, message, linkSection) {
@@ -1894,9 +2075,9 @@
 
             $('reportTotalCustomers').textContent = filteredCustomers.length;
             $('reportTotalDeals').textContent = filteredDeals.length;
-            $('reportWonValue').textContent = `${wonValue.toLocaleString('en-US')} ر.س`;
+            $('reportWonValue').textContent = `${wonValue.toLocaleString('en-US')} ${CURRENT_CURRENCY}`;
             $('reportConversionRate').textContent = `${conversionRate}%`;
-            $('reportAvgDealValue').textContent = `${avgDealValue.toLocaleString('en-US')} ر.س`;
+            $('reportAvgDealValue').textContent = `${avgDealValue.toLocaleString('en-US')} ${CURRENT_CURRENCY}`;
             $('reportTotalProperties').textContent = properties.length;
 
             // عملاء جدد شهرياً (آخر 6 شهور)
@@ -1974,7 +2155,7 @@
                 .map(([id, info]) => ({ name: salesTeam.find(s => s.id === id)?.full_name || 'بدون اسم', ...info }))
                 .sort((a, b) => b.total - a.total);
             $('commissionRows').innerHTML = commissionList.length ? commissionList.map(c => `
-                <tr><td>${c.name}</td><td>${c.count}</td><td>${c.total.toLocaleString('en-US')} ر.س</td></tr>
+                <tr><td>${c.name}</td><td>${c.count}</td><td>${c.total.toLocaleString('en-US')} ${CURRENT_CURRENCY}</td></tr>
             `).join('') : '<tr><td class="empty" colspan="3">لا توجد عمولات مستحقة بعد</td></tr>';
         }
 
@@ -2261,6 +2442,73 @@
             }
         });
 
+        function refreshAllCurrencyDisplays() {
+            if (typeof leadsLoadedOnce !== 'undefined' && leadsLoadedOnce) renderLeads();
+            if (typeof propertiesLoadedOnce !== 'undefined' && propertiesLoadedOnce) renderProperties();
+            if (typeof dealsLoadedOnce !== 'undefined' && dealsLoadedOnce) renderDeals();
+            if (typeof installmentsLoadedOnce !== 'undefined' && installmentsLoadedOnce) renderInstallments();
+            if (typeof finishesLoadedOnce !== 'undefined' && finishesLoadedOnce) renderFinishes();
+            render();
+        }
+
+        $('companyCurrencySelect').addEventListener('change', async event => {
+            const newCurrency = event.target.value;
+            $('settingsSaveStatus').textContent = 'جاري حفظ العملة...';
+            try {
+                const { error } = await supabaseClient.from('companies').update({ currency: newCurrency }).eq('id', CURRENT_COMPANY_ID);
+                if (error) throw error;
+                CURRENT_CURRENCY = newCurrency;
+                refreshAllCurrencyDisplays();
+                $('settingsSaveStatus').textContent = 'تم تغيير عملة النظام بنجاح ✔';
+            } catch (error) {
+                $('settingsSaveStatus').textContent = 'فشل حفظ العملة: ' + (error.message || '');
+            }
+        });
+
+        $('copyBotTokenBtn').addEventListener('click', async () => {
+            if (!CURRENT_BOT_TOKEN) {
+                $('whatsappBotTestStatus').textContent = 'لسه معملتيش كود الـ SQL الخاص بميزة بوت الواتساب';
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(CURRENT_BOT_TOKEN);
+                $('whatsappBotTestStatus').textContent = 'تم نسخ التوكن ✔';
+            } catch (error) {
+                $('whatsappBotTestStatus').textContent = 'تعذّر النسخ التلقائي، انسخي التوكن يدويًا من الحقل';
+            }
+        });
+
+        $('testWhatsappBotBtn').addEventListener('click', async () => {
+            if (!CURRENT_BOT_TOKEN) {
+                $('whatsappBotTestStatus').textContent = '❌ لسه معملتيش كود الـ SQL، أو الفنكشن لسه مش متعملة على Supabase';
+                return;
+            }
+            $('testWhatsappBotBtn').disabled = true;
+            $('whatsappBotTestStatus').textContent = 'جاري إرسال عميل تجريبي...';
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-bot-lead`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-bot-token': CURRENT_BOT_TOKEN },
+                    body: JSON.stringify({
+                        customer_name: 'عميل تجريبي - اختبار البوت',
+                        phone: '01000000000',
+                        intent: 'شراء',
+                        property_type: 'شقة',
+                        budget: '3000000',
+                        city: 'القاهرة الجديدة'
+                    })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'فشل الاختبار');
+                $('whatsappBotTestStatus').textContent = '✅ نجح الاختبار! افتحي قسم "العملاء المحتملين" وشوفي "عميل تجريبي - اختبار البوت" ظاهر فيه';
+                if (leadsLoadedOnce) loadLeads();
+            } catch (error) {
+                $('whatsappBotTestStatus').textContent = '❌ فشل الاختبار: ' + (error.message || 'تأكدي إنك عملتِ الـ Edge Function صح على Supabase');
+            } finally {
+                $('testWhatsappBotBtn').disabled = false;
+            }
+        });
+
         $('logoFileInput').addEventListener('change', async event => {
             const file = event.target.files[0];
             if (!file) return;
@@ -2327,6 +2575,7 @@
                     .from('leads')
                     .select('*')
                     .eq('company_id', CURRENT_COMPANY_ID)
+                    .is('deleted_at', null)
                     .order('created_at', { ascending: false });
 
                 if (CURRENT_USER_ROLE === 'sales') {
@@ -2368,7 +2617,7 @@
             $('inProgressLeads').textContent = leads.filter(l => l.status === 'in_progress').length;
             $('convertedLeads').textContent = leads.filter(l => l.status === 'converted').length;
             const totalBudget = leads.reduce((sum, l) => sum + (Number(l.budget) || 0), 0);
-            $('leadsBudget').textContent = `${totalBudget.toLocaleString('en-US')} ر.س`;
+            $('leadsBudget').textContent = `${totalBudget.toLocaleString('en-US')} ${CURRENT_CURRENCY}`;
             $('unassignedLeads').textContent = leads.filter(l => !l.sales_id).length;
 
             const assignmentFilter = $('leadAssignmentFilter').value;
@@ -2380,16 +2629,16 @@
             $('leadRows').innerHTML = filteredLeads.length ? filteredLeads.map(lead => {
                 const salesName = lead.sales_id ? (salesTeam.find(s => s.id === lead.sales_id)?.full_name || '—') : '—';
                 return `<tr data-id="${lead.id}" ${!lead.sales_id ? 'style="background:#fff8e6;"' : ''}>
-                    <td>${lead.name}</td>
+                    <td>${lead.name}${lead.source === 'whatsapp_bot' ? ' <span title="عميل جاي من بوت واتساب" style="font-size:12px;">🤖</span>' : ''}</td>
                     <td><a class="contact-link" href="tel:${(lead.phone || '').replace(/\s/g, '')}">${lead.phone || '—'}</a></td>
                     <td>${lead.company || '—'}</td>
-                    <td>${Number(lead.budget || 0).toLocaleString('en-US')} ر.س</td>
+                    <td>${Number(lead.budget || 0).toLocaleString('en-US')} ${CURRENT_CURRENCY}</td>
                     <td>${lead.sales_id ? salesName : '🎯 غير موزع'}</td>
                     <td><span class="status ${lead.status === 'not_interested' ? 'inactive' : ''}">${leadStatusLabel(lead.status)}</span></td>
                     <td><div class="actions">
                         ${!lead.sales_id ? `<button class="icon-btn claim-lead" data-id="${lead.id}" aria-label="التقاط ${lead.name}">🎯 التقاط</button>` : ''}
                         <button class="icon-btn edit-lead" data-id="${lead.id}" aria-label="تعديل ${lead.name}">✎</button>
-                        <button class="icon-btn delete-lead" data-id="${lead.id}" aria-label="حذف ${lead.name}" ${CURRENT_USER_ROLE !== 'admin' ? 'disabled' : ''}>⌫</button>
+                        <button class="icon-btn delete-lead" data-id="${lead.id}" aria-label="حذف ${lead.name}">⌫</button>
                     </div></td>
                 </tr>`;
             }).join('') : '<tr><td class="empty" colspan="7">لا توجد بيانات عملاء محتملين</td></tr>';
@@ -2456,12 +2705,12 @@
             } else if (button?.classList.contains('delete-lead') && !button.disabled) {
                 const id = Number(button.dataset.id);
                 const lead = leads.find(l => l.id === id);
-                if (confirm(`هل تريد حذف العميل المحتمل ${lead.name}؟`)) {
+                if (confirm(`هل تريد نقل العميل المحتمل ${lead.name} إلى سلة المهملات؟`)) {
                     try {
-                        await deleteLeadFromDb(id);
+                        await softDeleteRecord('leads', id);
                         leads = leads.filter(l => l.id !== id);
                         renderLeads();
-                        showMessage('تم حذف العميل المحتمل بنجاح', 'success');
+                        showMessage('تم نقل العميل المحتمل إلى سلة المهملات', 'success');
                     } catch (error) {
                         showMessage('حدث خطأ أثناء الحذف: ' + (error.message || ''), 'error');
                     }
@@ -2529,6 +2778,7 @@
                     .from('properties')
                     .select('*')
                     .eq('company_id', CURRENT_COMPANY_ID)
+                    .is('deleted_at', null)
                     .order('created_at', { ascending: false });
 
                 if (CURRENT_USER_ROLE === 'sales') {
@@ -2585,21 +2835,23 @@
                 const districtName = districts.find(d => d.id === property.district_id)?.name;
                 const locationLabel = [districtName, cityName].filter(Boolean).join(' - ') || '—';
                 const thumb = property.image_url ? `<img src="${property.image_url}" alt="" style="width:38px;height:32px;border-radius:6px;object-fit:cover;vertical-align:middle;margin-left:8px;">` : '';
+                const categoryLabel = property.property_category === 'primary' ? '🏗 بريماري' : '🔁 ريسيل';
                 return `<tr data-id="${property.id}">
                     <td>${thumb}${property.title}</td>
                     <td>${propertyTypeLabel(property.property_type)}</td>
+                    <td>${categoryLabel}</td>
                     <td>${locationLabel}</td>
                     <td>${property.area ? Number(property.area).toLocaleString('en-US') + ' م²' : '—'}</td>
                     <td>${property.property_type === 'land' ? '—' : (property.rooms ?? '—')}</td>
-                    <td>${Number(property.price || 0).toLocaleString('en-US')} ر.س</td>
+                    <td>${Number(property.price || 0).toLocaleString('en-US')} ${CURRENT_CURRENCY}</td>
                     <td>${salesName}</td>
                     <td><span class="status ${property.status === 'sold' ? 'inactive' : ''}">${propertyStatusLabel(property.status)}</span></td>
                     <td><div class="actions">
                         <button class="icon-btn edit-property" data-id="${property.id}" aria-label="تعديل ${property.title}">✎</button>
-                        <button class="icon-btn delete-property" data-id="${property.id}" aria-label="حذف ${property.title}" ${CURRENT_USER_ROLE !== 'admin' ? 'disabled' : ''}>⌫</button>
+                        <button class="icon-btn delete-property" data-id="${property.id}" aria-label="حذف ${property.title}">⌫</button>
                     </div></td>
                 </tr>`;
-            }).join('') : '<tr><td class="empty" colspan="9">لا توجد بيانات عقارات</td></tr>';
+            }).join('') : '<tr><td class="empty" colspan="10">لا توجد بيانات عقارات</td></tr>';
         }
 
         $('propertyTypeFilter').addEventListener('change', renderProperties);
@@ -2613,6 +2865,9 @@
             await loadOwnersIfNeeded();
             $('propertyOwnerSelect').innerHTML = '<option value="">بدون تحديد</option>' +
                 owners.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+            if (developersLoadedOnce === false) await loadDevelopers();
+            $('propertyDeveloperSelect').innerHTML = '<option value="">اختاري المطور</option>' +
+                developersList.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
             await loadCitiesIfNeeded();
             $('propertyCitySelect').innerHTML = '<option value="">اختاري مدينة</option>' +
                 cities.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
@@ -2623,7 +2878,10 @@
                 $('propertyRooms').value = property.rooms || '';
                 $('propertyPrice').value = property.price || '';
                 $('propertySalesSelect').value = property.sales_id || '';
+                $('propertyOwnershipCategory').value = property.property_category || 'resale';
                 $('propertyOwnerSelect').value = property.owner_id || '';
+                $('propertyDeveloperSelect').value = property.developer_id || '';
+                togglePropertyOwnershipFields();
                 $('propertyFinishStatus').value = property.finish_status || 'unfinished';
                 $('propertyStatus').value = property.status || 'available';
                 $('propertyNotes').value = property.notes || '';
@@ -2642,6 +2900,8 @@
                 $('propertyDistrictSelect').innerHTML = '<option value="">اختاري منطقة</option>';
                 $('propertyImageUrl').value = '';
                 $('propertyImagePreview').style.display = 'none';
+                $('propertyOwnershipCategory').value = 'resale';
+                togglePropertyOwnershipFields();
             }
             $('propertyImageStatus').textContent = '';
             $('propertySalesSelect').disabled = (CURRENT_USER_ROLE === 'sales');
@@ -2649,6 +2909,20 @@
             $('propertyTitle').focus();
         }
         function closePropertyModal() { $('propertyModal').classList.remove('open'); }
+
+        function togglePropertyOwnershipFields() {
+            const category = $('propertyOwnershipCategory').value;
+            if (category === 'primary') {
+                $('propertyOwnerField').style.display = 'none';
+                $('propertyDeveloperField').style.display = '';
+                $('propertyOwnerSelect').value = '';
+            } else {
+                $('propertyOwnerField').style.display = '';
+                $('propertyDeveloperField').style.display = 'none';
+                $('propertyDeveloperSelect').value = '';
+            }
+        }
+        $('propertyOwnershipCategory').addEventListener('change', togglePropertyOwnershipFields);
 
         $('propertyCitySelect').addEventListener('change', () => {
             populateDistrictSelect('propertyDistrictSelect', $('propertyCitySelect').value, null);
@@ -2666,12 +2940,12 @@
             } else if (button?.classList.contains('delete-property') && !button.disabled) {
                 const id = Number(button.dataset.id);
                 const property = properties.find(p => p.id === id);
-                if (confirm(`هل تريد حذف العقار ${property.title}؟`)) {
+                if (confirm(`هل تريد نقل العقار ${property.title} إلى سلة المهملات؟`)) {
                     try {
-                        await deletePropertyFromDb(id);
+                        await softDeleteRecord('properties', id);
                         properties = properties.filter(p => p.id !== id);
                         renderProperties();
-                        showMessage('تم حذف العقار بنجاح', 'success');
+                        showMessage('تم نقل العقار إلى سلة المهملات', 'success');
                     } catch (error) {
                         showMessage('حدث خطأ أثناء الحذف: ' + (error.message || ''), 'error');
                     }
@@ -2700,6 +2974,15 @@
                 showMessage('يرجى إدخال اسم/عنوان العقار', 'error');
                 return;
             }
+            const ownershipCategory = $('propertyOwnershipCategory').value;
+            if (ownershipCategory === 'resale' && !$('propertyOwnerSelect').value) {
+                showMessage('يرجى تحديد مالك العقار (إجباري لعقارات الريسيل)', 'error');
+                return;
+            }
+            if (ownershipCategory === 'primary' && !$('propertyDeveloperSelect').value) {
+                showMessage('يرجى تحديد المطور العقاري المسؤول (إجباري لعقارات البريماري)', 'error');
+                return;
+            }
             const data = {
                 title: $('propertyTitle').value.trim(),
                 property_type: $('propertyType').value,
@@ -2709,7 +2992,9 @@
                 rooms: Number($('propertyRooms').value) || null,
                 price: Number($('propertyPrice').value) || 0,
                 sales_id: CURRENT_USER_ROLE === 'sales' ? CURRENT_USER_ID : ($('propertySalesSelect').value || null),
-                owner_id: $('propertyOwnerSelect').value ? Number($('propertyOwnerSelect').value) : null,
+                property_category: ownershipCategory,
+                owner_id: ownershipCategory === 'resale' && $('propertyOwnerSelect').value ? Number($('propertyOwnerSelect').value) : null,
+                developer_id: ownershipCategory === 'primary' && $('propertyDeveloperSelect').value ? Number($('propertyDeveloperSelect').value) : null,
                 finish_status: $('propertyFinishStatus').value,
                 status: $('propertyStatus').value,
                 notes: $('propertyNotes').value.trim(),
@@ -2755,6 +3040,7 @@
                     .from('deals')
                     .select('*')
                     .eq('company_id', CURRENT_COMPANY_ID)
+                    .is('deleted_at', null)
                     .order('created_at', { ascending: false });
 
                 if (CURRENT_USER_ROLE === 'sales') {
@@ -2798,11 +3084,11 @@
             $('negotiationDeals').textContent = deals.filter(d => d.stage === 'negotiation').length;
             $('wonDeals').textContent = deals.filter(d => d.stage === 'won').length;
             const totalValue = deals.reduce((sum, d) => sum + (Number(d.value) || 0), 0);
-            $('dealsValue').textContent = `${totalValue.toLocaleString('en-US')} ر.س`;
+            $('dealsValue').textContent = `${totalValue.toLocaleString('en-US')} ${CURRENT_CURRENCY}`;
             $('dealsResultCount').textContent = `(${deals.length})`;
             if ($('totalCommissions')) {
                 const totalCommissions = deals.reduce((sum, d) => sum + dealCommission(d), 0);
-                $('totalCommissions').textContent = `${totalCommissions.toLocaleString('en-US')} ر.س`;
+                $('totalCommissions').textContent = `${totalCommissions.toLocaleString('en-US')} ${CURRENT_CURRENCY}`;
             }
 
             $('dealRows').innerHTML = deals.length ? deals.map(deal => {
@@ -2814,14 +3100,14 @@
                 return `<tr data-id="${deal.id}">
                     <td>${customerName}</td>
                     <td>${propertyTitle}</td>
-                    <td>${Number(deal.value || 0).toLocaleString('en-US')} ر.س</td>
+                    <td>${Number(deal.value || 0).toLocaleString('en-US')} ${CURRENT_CURRENCY}</td>
                     <td>${salesName}</td>
                     <td>${deal.commission_rate ?? 0}%</td>
-                    <td>${deal.stage === 'won' ? commission.toLocaleString('en-US') + ' ر.س' : '—'}</td>
+                    <td>${deal.stage === 'won' ? commission.toLocaleString('en-US') + ' ' + CURRENT_CURRENCY : '—'}</td>
                     <td><span class="status ${stageClass}">${dealStageLabel(deal.stage)}</span></td>
                     <td><div class="actions">
                         <button class="icon-btn edit-deal" data-id="${deal.id}" aria-label="تعديل الصفقة">✎</button>
-                        <button class="icon-btn delete-deal" data-id="${deal.id}" aria-label="حذف الصفقة" ${CURRENT_USER_ROLE !== 'admin' ? 'disabled' : ''}>⌫</button>
+                        <button class="icon-btn delete-deal" data-id="${deal.id}" aria-label="حذف الصفقة">⌫</button>
                     </div></td>
                 </tr>`;
             }).join('') : '<tr><td class="empty" colspan="8">لا توجد صفقات</td></tr>';
@@ -2877,12 +3163,12 @@
                 openDealModal(deals.find(d => d.id === Number(button.dataset.id)));
             } else if (button?.classList.contains('delete-deal') && !button.disabled) {
                 const id = Number(button.dataset.id);
-                if (confirm('هل تريدي حذف هذه الصفقة؟')) {
+                if (confirm('هل تريدي نقل هذه الصفقة إلى سلة المهملات؟')) {
                     try {
-                        await deleteDealFromDb(id);
+                        await softDeleteRecord('deals', id);
                         deals = deals.filter(d => d.id !== id);
                         renderDeals();
-                        showMessage('تم حذف الصفقة بنجاح', 'success');
+                        showMessage('تم نقل الصفقة إلى سلة المهملات', 'success');
                     } catch (error) {
                         showMessage('حدث خطأ أثناء الحذف: ' + (error.message || ''), 'error');
                     }
@@ -2927,7 +3213,7 @@
                 if (data.stage === 'won' && !wasWonBefore) {
                     const customerName = customers.find(c => c.id === data.customer_id)?.name || '';
                     const salesName = data.sales_id ? (salesTeam.find(s => s.id === data.sales_id)?.full_name || '') : '';
-                    notifyAdmins('🎉 صفقة فائزة جديدة', `صفقة بقيمة ${Number(data.value || 0).toLocaleString('en-US')} ر.س مع ${customerName}${salesName ? ' — ' + salesName : ''}`, 'dealsSection');
+                    notifyAdmins('🎉 صفقة فائزة جديدة', `صفقة بقيمة ${Number(data.value || 0).toLocaleString('en-US')} ${CURRENT_CURRENCY} مع ${customerName}${salesName ? ' — ' + salesName : ''}`, 'dealsSection');
                 }
                 closeDealModal();
                 renderDeals();
@@ -3038,10 +3324,10 @@
             const overdueCount = enriched.filter(i => i.statusInfo.key === 'overdue').length;
             const upcomingCount = enriched.filter(i => i.statusInfo.key === 'upcoming').length;
             const collected = enriched.filter(i => i.status === 'paid').reduce((sum, i) => sum + Number(i.amount || 0), 0);
-            $('installmentsTotalDue').textContent = `${totalDue.toLocaleString('en-US')} ر.س`;
+            $('installmentsTotalDue').textContent = `${totalDue.toLocaleString('en-US')} ${CURRENT_CURRENCY}`;
             $('installmentsOverdueCount').textContent = overdueCount;
             $('installmentsUpcomingCount').textContent = upcomingCount;
-            $('installmentsCollected').textContent = `${collected.toLocaleString('en-US')} ر.س`;
+            $('installmentsCollected').textContent = `${collected.toLocaleString('en-US')} ${CURRENT_CURRENCY}`;
 
             $('installmentRows').innerHTML = filtered.length ? filtered.map(inst => {
                 const customerName = customers.find(c => c.id === inst.customer_id)?.name || '—';
@@ -3050,7 +3336,7 @@
                     <td>${customerName}</td>
                     <td>${salesName}</td>
                     <td>${new Date(inst.due_date).toLocaleDateString('en-GB')}</td>
-                    <td>${Number(inst.amount || 0).toLocaleString('en-US')} ر.س</td>
+                    <td>${Number(inst.amount || 0).toLocaleString('en-US')} ${CURRENT_CURRENCY}</td>
                     <td>${inst.statusInfo.label}</td>
                     <td>${inst.status !== 'paid' ? `<button class="icon-btn collect-installment" data-id="${inst.id}" aria-label="تحصيل">💰 تحصيل</button>` : '—'}</td>
                 </tr>`;
@@ -3160,7 +3446,7 @@
             $('inProgressFinishes').textContent = finishes.filter(f => f.status === 'in_progress').length;
             $('completedFinishes').textContent = finishes.filter(f => f.status === 'completed').length;
             const totalCost = finishes.reduce((sum, f) => sum + (Number(f.cost) || 0), 0);
-            $('finishesCost').textContent = `${totalCost.toLocaleString('en-US')} ر.س`;
+            $('finishesCost').textContent = `${totalCost.toLocaleString('en-US')} ${CURRENT_CURRENCY}`;
             $('finishesResultCount').textContent = `(${finishes.length})`;
 
             $('finishRows').innerHTML = finishes.length ? finishes.map(finish => {
@@ -3170,7 +3456,7 @@
                     <td>${customerName}</td>
                     <td>${propertyTitle}</td>
                     <td>${finish.finish_type || '—'} · ${finishLevelLabel(finish.finish_level)}</td>
-                    <td>${Number(finish.cost || 0).toLocaleString('en-US')} ر.س</td>
+                    <td>${Number(finish.cost || 0).toLocaleString('en-US')} ${CURRENT_CURRENCY}</td>
                     <td>${Number(finish.progress || 0)}%</td>
                     <td><span class="status ${finish.status === 'completed' ? '' : finish.status === 'stopped' ? 'inactive' : ''}">${finishStatusLabelFull(finish.status)}</span></td>
                     <td><div class="actions">
