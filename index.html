@@ -402,6 +402,10 @@
                     <div class="card"><div class="card-title">💰 صفقاتي</div><div class="card-number" id="homeMyDeals">0</div></div>
                 </section>
                 <section class="workspace">
+                    <div class="toolbar"><h2>📌 متابعات مستحقة</h2></div>
+                    <div id="homeDueFollowups" style="padding:0 16px 20px;"></div>
+                </section>
+                <section class="workspace">
                     <div class="toolbar"><h2>وصول سريع</h2></div>
                     <div style="display:flex;flex-wrap:wrap;gap:12px;padding:0 16px 20px;">
                         <button class="secondary home-quick-link" type="button" data-goto="customersSection">👥 إضافة/متابعة عميل</button>
@@ -916,8 +920,11 @@
                     <div class="field"><label for="followupDate">التاريخ</label><input id="followupDate" type="date" required></div>
                     <div class="field"><label for="followupType">نوع التواصل</label><select id="followupType"><option>مكالمة هاتفية</option><option>واتساب</option><option>بريد إلكتروني</option><option>اجتماع</option><option>أخرى</option></select></div>
                     <div class="field"><label for="followupNotes">ملاحظات المتابعة</label><textarea id="followupNotes" required placeholder="اكتب ملخص المتابعة..."></textarea></div>
+                    <div class="field"><label for="nextFollowupDate">⏰ حددي متابعة قادمة (اختياري)</label><input id="nextFollowupDate" type="date"></div>
+                    <div class="field"><label for="nextFollowupNote">ملاحظة سريعة عن المتابعة القادمة (اختياري)</label><input id="nextFollowupNote" type="text" placeholder="مثال: اتصال تأكيد بعد المعاينة"></div>
                     <button class="primary" type="submit">＋ إضافة متابعة</button>
                 </form>
+                <div id="nextFollowupBadge" style="margin:4px 0 12px;"></div>
                 <div class="followup-list" id="followupList"></div>
             </section>
         </div>
@@ -1198,9 +1205,40 @@
             $('detailModalTitle').textContent = `تفاصيل العميل: ${customer.name}`;
             $('detailModalContent').innerHTML = `<div class="detail-profile"><span class="avatar">${initials(customer.name)}</span><div><strong>${customer.name}</strong><small>${statusLabel(customer.status)} · ${customer.company || '—'} · ${leadPriorityLabel(customer.lead_score)}</small></div></div><div class="detail-actions"><a class="contact-button" href="tel:${(customer.phone || '').replace(/\s/g, '')}">☎ اتصال</a><a class="contact-button whatsapp" href="https://wa.me/${(customer.whatsapp || '').replace(/\D/g, '')}" target="_blank">◉ واتساب</a><button type="button" class="secondary" id="findMatchBtn">🔍 البحث عن عقار متوافق</button></div><div class="detail-list"><div><span>اسم العميل</span><b>${customer.name}</b></div><div><span>اسم السيلز</span><b>${customer.sales_id ? (salesTeam.find(s => s.id === customer.sales_id)?.full_name || '—') : '—'}</b></div><div><span>رقم الهاتف</span><b>${customer.phone || '—'}</b></div><div><span>اسم الشركة</span><b>${customer.company || '—'}</b></div><div><span>الميزانية</span><b>${Number(customer.budget || 0).toLocaleString('en-US')} ${CURRENT_CURRENCY}</b></div><div><span>رقم الواتساب</span><b>${customer.whatsapp || '—'}</b></div><div><span>التفاصيل</span><b>${customer.details || '—'}</b></div><div><span>الملاحظات</span><b>${customer.notes || '—'}</b></div></div><div id="matchingPropertiesResults"></div>`;
             $('followupDate').value = new Date().toISOString().slice(0, 10);
+            $('nextFollowupDate').value = '';
+            $('nextFollowupNote').value = '';
             renderFollowups(customer);
+            renderNextFollowupBadge(customer);
             $('detailModal').classList.add('open');
         }
+
+        function renderNextFollowupBadge(customer) {
+            const badge = $('nextFollowupBadge');
+            if (!customer.next_follow_up_date) { badge.innerHTML = ''; return; }
+            const isOverdue = customer.next_follow_up_date < new Date().toISOString().slice(0, 10);
+            badge.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-radius:10px;background:${isOverdue ? '#fdecea' : 'var(--gold-soft)'};border:1px solid ${isOverdue ? '#f3b8b1' : 'var(--gold)'};">
+                <span style="font-size:13px;color:${isOverdue ? '#b3261e' : 'var(--ink)'};">⏰ متابعة ${isOverdue ? 'متأخرة' : 'قادمة'}: ${customer.next_follow_up_date}${customer.next_follow_up_note ? ' — ' + customer.next_follow_up_note : ''}</span>
+                <button type="button" class="secondary" id="clearNextFollowupBtn" style="padding:5px 10px;font-size:12px;">تمت ✅</button>
+            </div>`;
+        }
+
+        document.addEventListener('click', async event => {
+            if (event.target && event.target.id === 'clearNextFollowupBtn') {
+                const customer = customers.find(item => item.id === selectedId);
+                if (!customer) return;
+                try {
+                    await updateCustomerInDb(customer.id, { next_follow_up_date: null, next_follow_up_note: null, next_follow_up_reminder_sent: false });
+                    customer.next_follow_up_date = null;
+                    customer.next_follow_up_note = null;
+                    renderNextFollowupBadge(customer);
+                    updateHomeStats();
+                    renderHomeDueFollowups();
+                    showMessage('تم تسجيل المتابعة كمكتملة', 'success');
+                } catch (error) {
+                    showMessage('فشل تحديث المتابعة: ' + (error.message || ''), 'error');
+                }
+            }
+        });
 
         function propertyMatchesCustomer(property, customer, tolerance) {
             if (customer.desired_property_type && property.property_type !== customer.desired_property_type) return false;
@@ -1365,12 +1403,26 @@
             if (!customer || !$('followupDate').value || !$('followupNotes').value.trim()) { showMessage('يرجى إدخال التاريخ وملاحظات المتابعة', 'error'); return; }
             const followUps = customer.follow_ups || [];
             followUps.push({ date: $('followupDate').value, type: $('followupType').value, notes: $('followupNotes').value.trim() });
+            const nextDate = $('nextFollowupDate').value || null;
+            const nextNote = $('nextFollowupNote').value.trim() || null;
+            const updates = { follow_ups: followUps };
+            if (nextDate) {
+                updates.next_follow_up_date = nextDate;
+                updates.next_follow_up_note = nextNote;
+                updates.next_follow_up_reminder_sent = false;
+            }
             try {
-                await updateCustomerInDb(customer.id, { follow_ups: followUps });
+                await updateCustomerInDb(customer.id, updates);
                 customer.follow_ups = followUps;
+                if (nextDate) { customer.next_follow_up_date = nextDate; customer.next_follow_up_note = nextNote; customer.next_follow_up_reminder_sent = false; }
                 $('followupNotes').value = '';
+                $('nextFollowupDate').value = '';
+                $('nextFollowupNote').value = '';
                 renderFollowups(customer);
+                renderNextFollowupBadge(customer);
                 render();
+                updateHomeStats();
+                renderHomeDueFollowups();
                 showMessage('تمت إضافة المتابعة بنجاح', 'success');
                 if (CURRENT_USER_ROLE === 'sales') awardPoints(CURRENT_USER_ID, 2);
             } catch (error) {
@@ -1737,6 +1789,9 @@
             setInterval(loadNotifications, 30000);
             checkDueInstallmentReminders();
             setInterval(checkDueInstallmentReminders, 60 * 60 * 1000);
+            checkDueFollowUpReminders();
+            setInterval(checkDueFollowUpReminders, 60 * 60 * 1000);
+            renderHomeDueFollowups();
             setupSectionSwitching();
             handleFacebookOAuthReturn();
             $('homeGreeting').textContent = `أهلاً بيك يا ${CURRENT_USER_NAME || ''} 👋`;
@@ -1785,6 +1840,93 @@
                 document.querySelector(`.menu li[data-section="${btn.dataset.goto}"]`)?.click();
             });
         });
+
+        // =====================================================
+        // متابعات مستحقة (على صفحة الرئيسية)
+        // =====================================================
+        async function renderHomeDueFollowups() {
+            const container = $('homeDueFollowups');
+            if (!container) return;
+            try {
+                const todayStr = new Date().toISOString().slice(0, 10);
+                let query = supabaseClient
+                    .from('customers')
+                    .select('id, name, phone, next_follow_up_date, next_follow_up_note, sales_id')
+                    .eq('company_id', CURRENT_COMPANY_ID)
+                    .is('deleted_at', null)
+                    .not('next_follow_up_date', 'is', null)
+                    .lte('next_follow_up_date', todayStr)
+                    .order('next_follow_up_date', { ascending: true });
+                if (CURRENT_USER_ROLE === 'sales') query = query.eq('sales_id', CURRENT_USER_ID);
+
+                const { data, error } = await query;
+                if (error) throw error;
+
+                if (!data || !data.length) {
+                    container.innerHTML = '<div class="empty" style="padding:18px;">لا توجد متابعات مستحقة دلوقتي 🎉</div>';
+                    return;
+                }
+                container.innerHTML = data.map(c => {
+                    const overdue = c.next_follow_up_date < todayStr;
+                    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:10px;background:${overdue ? '#fdecea' : 'var(--gold-soft)'};border:1px solid ${overdue ? '#f3b8b1' : 'var(--gold)'};margin-bottom:8px;">
+                        <div>
+                            <div style="font-size:13.5px;font-weight:700;color:var(--ink);">${c.name}${overdue ? ' — متأخرة ⏰' : ''}</div>
+                            <div style="font-size:12.5px;color:var(--muted);margin-top:2px;">${c.next_follow_up_date}${c.next_follow_up_note ? ' — ' + c.next_follow_up_note : ''}</div>
+                        </div>
+                        <div style="display:flex;gap:6px;">
+                            <button type="button" class="secondary home-open-customer" data-id="${c.id}" style="padding:6px 10px;font-size:12px;">فتح</button>
+                            <button type="button" class="secondary home-done-followup" data-id="${c.id}" style="padding:6px 10px;font-size:12px;">تمت ✅</button>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (error) {
+                container.innerHTML = '';
+            }
+        }
+
+        $('homeDueFollowups').addEventListener('click', async event => {
+            const openBtn = event.target.closest('.home-open-customer');
+            const doneBtn = event.target.closest('.home-done-followup');
+            if (openBtn) {
+                const id = openBtn.dataset.id;
+                document.querySelector('.menu li[data-section="customersSection"]')?.click();
+                let customer = customers.find(c => c.id === id);
+                if (!customer) { await loadCustomers(); customer = customers.find(c => c.id === id); }
+                if (customer) openDetailModal(customer);
+            } else if (doneBtn) {
+                const id = doneBtn.dataset.id;
+                try {
+                    await updateCustomerInDb(id, { next_follow_up_date: null, next_follow_up_note: null, next_follow_up_reminder_sent: false });
+                    const customer = customers.find(c => c.id === id);
+                    if (customer) { customer.next_follow_up_date = null; customer.next_follow_up_note = null; }
+                    renderHomeDueFollowups();
+                    showMessage('تم تسجيل المتابعة كمكتملة', 'success');
+                } catch (error) {
+                    showMessage('فشل تحديث المتابعة: ' + (error.message || ''), 'error');
+                }
+            }
+        });
+
+        async function checkDueFollowUpReminders() {
+            try {
+                const todayStr = new Date().toISOString().slice(0, 10);
+                const { data, error } = await supabaseClient
+                    .from('customers')
+                    .select('id, name, sales_id, next_follow_up_date, next_follow_up_note')
+                    .eq('company_id', CURRENT_COMPANY_ID)
+                    .is('deleted_at', null)
+                    .not('next_follow_up_date', 'is', null)
+                    .lte('next_follow_up_date', todayStr)
+                    .eq('next_follow_up_reminder_sent', false);
+                if (error || !data || !data.length) return;
+                for (const c of data) {
+                    const message = `⏰ متابعة مستحقة للعميل ${c.name}${c.next_follow_up_note ? ' — ' + c.next_follow_up_note : ''}`;
+                    if (c.sales_id) await createNotification(c.sales_id, 'متابعة مستحقة', message, 'customersSection');
+                    await notifyAdmins('متابعة مستحقة', message, 'customersSection');
+                    await supabaseClient.from('customers').update({ next_follow_up_reminder_sent: true }).eq('id', c.id);
+                }
+            } catch (error) { /* تجاهل */ }
+        }
 
         // =====================================================
         // التنقل بين الأقسام (العملاء / العملاء المحتملون)
