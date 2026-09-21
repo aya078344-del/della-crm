@@ -385,6 +385,7 @@
                         <li data-section="leaderboardSection">🏆 لوحة الصدارة</li>
                         <li data-section="installmentsSection">🧾 الأقساط والتحصيل</li>
                         <li data-section="reportsSection" id="reportsMenuItem">📊 التقارير والإحصائيات</li>
+                        <li data-section="auditLogSection" id="auditLogMenuItem">📜 سجل التدقيق</li>
                     </ul>
                 </li>
             </ul>
@@ -421,6 +422,9 @@
                 <div><h1>DELLA CRM</h1><p>تابع علاقاتك مع العملاء ونظّم بياناتهم من مكان واحد</p></div>
                 <div style="display:flex;gap:8px;">
                     <button class="secondary" id="exportCustomersBtn" type="button">⬇ تصدير Excel</button>
+                    <button class="secondary" id="downloadImportTemplateBtn" type="button">📄 قالب الاستيراد</button>
+                    <button class="secondary" id="importCustomersBtn" type="button">⬆ استيراد من Excel</button>
+                    <input type="file" id="importCustomersFile" accept=".xlsx,.xls,.csv" style="display:none;">
                     <button class="primary" id="addCustomer">＋ إضافة عميل</button>
                 </div>
             </header>
@@ -649,6 +653,15 @@
                     <div class="table-wrap"><table><thead><tr><th>النوع</th><th>الاسم/العنوان</th><th>من حذفه</th><th>تاريخ الحذف</th><th>إجراءات</th></tr></thead><tbody id="trashRows"></tbody></table></div>
                 </section>
             </section>
+            <section id="auditLogSection" class="app-section">
+                <header class="header">
+                    <div><h1>📜 سجل التدقيق</h1><p>سجل كامل لمين عدّل أو حذف أو استعاد إيه ومتى (المدير فقط، غير قابل للتعديل)</p></div>
+                </header>
+                <section class="workspace">
+                    <div class="toolbar"><h2>آخر الإجراءات <span id="auditLogResultCount" style="color:#7a817e;font-size:13px;font-weight:normal"></span></h2></div>
+                    <div class="table-wrap"><table><thead><tr><th>التاريخ والوقت</th><th>المستخدم</th><th>الإجراء</th><th>النوع</th><th>العنصر</th></tr></thead><tbody id="auditLogRows"></tbody></table></div>
+                </section>
+            </section>
             <section id="areasSection" class="app-section">
                 <header class="header">
                     <div><h1>المدن والمناطق</h1><p>أضيفي المدن والأحياء اللي شركتك بتشتغل فيها (المدير فقط)</p></div>
@@ -863,6 +876,17 @@
             <div class="form-footer"><button class="primary" type="submit" id="saveLeadBtn">حفظ العميل المحتمل</button><button class="secondary" type="button" id="cancelLeadModal">إلغاء</button></div>
         </form>
     </div>
+    <div class="modal" id="importPreviewModal" role="dialog" aria-modal="true" aria-labelledby="importPreviewTitle">
+        <div class="modal-box">
+            <div class="modal-head"><h2 id="importPreviewTitle">استيراد عملاء من Excel</h2><button type="button" class="close" id="closeImportPreviewModal" aria-label="إغلاق">×</button></div>
+            <div id="importPreviewSummary" style="padding:0 4px 12px;font-size:14px;color:var(--ink);"></div>
+            <div class="table-wrap" style="max-height:320px;overflow:auto;"><table><thead><tr><th>الاسم</th><th>الهاتف</th><th>الشركة</th><th>الميزانية</th></tr></thead><tbody id="importPreviewRows"></tbody></table></div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:14px;">
+                <button type="button" class="secondary" id="cancelImportBtn">إلغاء</button>
+                <button type="button" class="primary" id="confirmImportBtn">✔ تأكيد الاستيراد</button>
+            </div>
+        </div>
+    </div>
     <div class="modal" id="customerModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <form class="modal-box" id="customerForm" novalidate>
             <div class="modal-head"><h2 id="modalTitle">إضافة عميل جديد</h2><button type="button" class="close" id="closeModal" aria-label="إغلاق">×</button></div>
@@ -1076,12 +1100,13 @@
             } }
         };
 
-        async function softDeleteRecord(table, id) {
+        async function softDeleteRecord(table, id, label) {
             const { error } = await supabaseClient
                 .from(table)
                 .update({ deleted_at: new Date().toISOString(), deleted_by: CURRENT_USER_ID })
                 .eq('id', id);
             if (error) throw error;
+            logAudit('نقل لسلة المهملات', table, id, label || '');
         }
 
         let trashItems = [];
@@ -1133,6 +1158,33 @@
             $('trashResultCount').textContent = `(${trashItems.length})`;
         }
 
+        // =====================================================
+        // سجل التدقيق (Audit Log) — عرض للمدير فقط
+        // =====================================================
+        async function loadAuditLog() {
+            const container = $('auditLogRows');
+            if (!container) return;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('audit_log')
+                    .select('*')
+                    .eq('company_id', CURRENT_COMPANY_ID)
+                    .order('created_at', { ascending: false })
+                    .limit(300);
+                if (error) throw error;
+                container.innerHTML = data.length ? data.map(entry => `<tr>
+                    <td>${new Date(entry.created_at).toLocaleString('en-GB')}</td>
+                    <td>${entry.user_name || '—'}</td>
+                    <td>${entry.action}</td>
+                    <td>${TRASH_TABLES[entry.entity_type]?.label || entry.entity_type}</td>
+                    <td>${entry.entity_label || '—'}</td>
+                </tr>`).join('') : '<tr><td class="empty" colspan="5">لا توجد إجراءات مسجلة بعد</td></tr>';
+                $('auditLogResultCount').textContent = `(${data.length})`;
+            } catch (error) {
+                container.innerHTML = '<tr><td class="empty" colspan="5">فشل تحميل سجل التدقيق</td></tr>';
+            }
+        }
+
         document.addEventListener('click', async event => {
             const restoreBtn = event.target.closest('.restore-item');
             const hardDeleteBtn = event.target.closest('.hard-delete-item');
@@ -1141,10 +1193,14 @@
                 const id = Number(restoreBtn.dataset.id);
                 const table = restoreBtn.dataset.table;
                 try {
+                    const item = trashItems.find(i => i.id === id && i.__table === table);
+                    let label = '';
+                    try { label = item ? (TRASH_TABLES[table].titleOf(item) || '') : ''; } catch (e) { label = ''; }
                     const { error } = await supabaseClient.from(table).update({ deleted_at: null, deleted_by: null }).eq('id', id);
                     if (error) throw error;
                     trashItems = trashItems.filter(i => !(i.id === id && i.__table === table));
                     renderTrash();
+                    logAudit('استعادة من سلة المهملات', table, id, label);
                     showMessage('تم استعادة العنصر بنجاح', 'success');
                     // إعادة تحميل القسم الأصلي لو محمّل بالفعل عشان يظهر فيه تاني
                     if (table === 'customers') loadCustomers();
@@ -1161,10 +1217,14 @@
                 const table = hardDeleteBtn.dataset.table;
                 if (!confirm('تحذير: الحذف النهائي لا يمكن التراجع عنه أبدًا. هل أنتِ متأكدة؟')) return;
                 try {
+                    const item = trashItems.find(i => i.id === id && i.__table === table);
+                    let label = '';
+                    try { label = item ? (TRASH_TABLES[table].titleOf(item) || '') : ''; } catch (e) { label = ''; }
                     const { error } = await supabaseClient.from(table).delete().eq('id', id);
                     if (error) throw error;
                     trashItems = trashItems.filter(i => !(i.id === id && i.__table === table));
                     renderTrash();
+                    logAudit('حذف نهائي', table, id, label);
                     showMessage('تم الحذف النهائي بنجاح', 'success');
                 } catch (error) {
                     showMessage('فشل الحذف النهائي: ' + (error.message || ''), 'error');
@@ -1380,7 +1440,7 @@
                 const customer = customers.find(item => item.id === id);
                 if (confirm(`هل تريد نقل العميل ${customer.name} إلى سلة المهملات؟`)) {
                     try {
-                        await softDeleteRecord('customers', id);
+                        await softDeleteRecord('customers', id, customer.name);
                         customers = customers.filter(item => item.id !== id);
                         if (selectedId === id) selectedId = customers[0]?.id;
                         render();
@@ -1647,7 +1707,7 @@
                 const owner = owners.find(o => o.id === id);
                 if (confirm(`هل تريدين نقل المالك ${owner.name} إلى سلة المهملات؟`)) {
                     try {
-                        await softDeleteRecord('owners', id);
+                        await softDeleteRecord('owners', id, owner.name);
                         owners = owners.filter(o => o.id !== id);
                         renderOwners();
                         showMessage('تم نقل المالك إلى سلة المهملات', 'success');
@@ -1781,6 +1841,7 @@
             $('planMenuItem').style.display = (CURRENT_USER_ROLE === 'admin') ? '' : 'none';
             $('reportsMenuItem').style.display = (CURRENT_USER_ROLE === 'admin') ? '' : 'none';
             $('trashMenuItem').style.display = (CURRENT_USER_ROLE === 'admin') ? '' : 'none';
+            $('auditLogMenuItem').style.display = (CURRENT_USER_ROLE === 'admin') ? '' : 'none';
             await loadCompanySettings();
             await loadSalesTeam();
             await loadCompanyAdmins();
@@ -1888,13 +1949,13 @@
             const openBtn = event.target.closest('.home-open-customer');
             const doneBtn = event.target.closest('.home-done-followup');
             if (openBtn) {
-                const id = openBtn.dataset.id;
+                const id = Number(openBtn.dataset.id);
                 document.querySelector('.menu li[data-section="customersSection"]')?.click();
                 let customer = customers.find(c => c.id === id);
                 if (!customer) { await loadCustomers(); customer = customers.find(c => c.id === id); }
                 if (customer) openDetailModal(customer);
             } else if (doneBtn) {
-                const id = doneBtn.dataset.id;
+                const id = Number(doneBtn.dataset.id);
                 try {
                     await updateCustomerInDb(id, { next_follow_up_date: null, next_follow_up_note: null, next_follow_up_reminder_sent: false });
                     const customer = customers.find(c => c.id === id);
@@ -1989,6 +2050,9 @@
                     if (item.dataset.section === 'trashSection') {
                         loadTrash();
                     }
+                    if (item.dataset.section === 'auditLogSection') {
+                        loadAuditLog();
+                    }
                 });
             });
             $('settingsMenuGroupLabel').addEventListener('click', () => {
@@ -2062,6 +2126,21 @@
                 companyAdminIds = data.map(a => a.id);
                 companyAdmins = data;
             }
+        }
+
+        async function logAudit(action, entityType, entityId, entityLabel, details) {
+            try {
+                await supabaseClient.from('audit_log').insert([{
+                    company_id: CURRENT_COMPANY_ID,
+                    user_id: CURRENT_USER_ID,
+                    user_name: CURRENT_USER_NAME || '',
+                    action,
+                    entity_type: entityType,
+                    entity_id: entityId ?? null,
+                    entity_label: entityLabel || '',
+                    details: details || ''
+                }]);
+            } catch (error) { /* سجل التدقيق ثانوي، متعملش بلوك للمستخدم لو فشل */ }
         }
 
         async function createNotification(userId, title, message, linkSection) {
@@ -2198,6 +2277,110 @@
             ], `عملاء-DELLA-CRM-${new Date().toISOString().slice(0, 10)}.xlsx`);
         });
 
+        // =====================================================
+        // استيراد عملاء من Excel
+        // =====================================================
+        const IMPORT_TEMPLATE_HEADERS = ['اسم العميل', 'الهاتف', 'الواتساب', 'الشركة', 'البريد الإلكتروني', 'الميزانية'];
+
+        $('downloadImportTemplateBtn').addEventListener('click', () => {
+            const worksheet = XLSX.utils.json_to_sheet([
+                { 'اسم العميل': 'مثال: أحمد محمد', 'الهاتف': '01000000000', 'الواتساب': '01000000000', 'الشركة': 'اسم الشركة (اختياري)', 'البريد الإلكتروني': 'example@email.com', 'الميزانية': 2000000 }
+            ], { header: IMPORT_TEMPLATE_HEADERS });
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+            XLSX.writeFile(workbook, 'قالب-استيراد-عملاء-DELLA-CRM.xlsx');
+        });
+
+        let pendingImportRows = [];
+
+        $('importCustomersBtn').addEventListener('click', () => $('importCustomersFile').click());
+
+        $('importCustomersFile').addEventListener('change', async event => {
+            const file = event.target.files[0];
+            if (!file) return;
+            try {
+                const buffer = await file.arrayBuffer();
+                const workbook = XLSX.read(buffer, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+                const getVal = (row, keys) => {
+                    for (const k of keys) { if (row[k] !== undefined && row[k] !== '') return row[k]; }
+                    return '';
+                };
+
+                const parsed = rows.map(row => ({
+                    name: String(getVal(row, ['اسم العميل', 'الاسم', 'name', 'Name'])).trim(),
+                    phone: String(getVal(row, ['الهاتف', 'رقم الهاتف', 'phone', 'Phone'])).trim(),
+                    whatsapp: String(getVal(row, ['الواتساب', 'رقم الواتساب', 'whatsapp'])).trim(),
+                    company: String(getVal(row, ['الشركة', 'اسم الشركة', 'company'])).trim(),
+                    email: String(getVal(row, ['البريد الإلكتروني', 'الايميل', 'email'])).trim(),
+                    budget: Number(getVal(row, ['الميزانية', 'budget'])) || 0
+                }));
+
+                const valid = parsed.filter(r => r.name && r.phone);
+                const invalidCount = parsed.length - valid.length;
+
+                if (!valid.length) {
+                    showMessage('مفيش صفوف صحيحة في الملف — لازم كل صف يكون فيه اسم ورقم هاتف على الأقل', 'error');
+                    event.target.value = '';
+                    return;
+                }
+
+                pendingImportRows = valid;
+                $('importPreviewSummary').innerHTML = `هيتم استيراد <b>${valid.length}</b> عميل${invalidCount ? ` (اتجاهل ${invalidCount} صف ناقصه الاسم أو الهاتف)` : ''}.`;
+                $('importPreviewRows').innerHTML = valid.slice(0, 50).map(r => `<tr><td>${r.name}</td><td>${r.phone}</td><td>${r.company || '—'}</td><td>${r.budget.toLocaleString('en-US')}</td></tr>`).join('') +
+                    (valid.length > 50 ? `<tr><td colspan="4" style="text-align:center;color:var(--muted);">... و${valid.length - 50} عميل تاني</td></tr>` : '');
+                $('importPreviewModal').classList.add('open');
+            } catch (error) {
+                showMessage('فشل قراءة الملف: ' + (error.message || ''), 'error');
+            } finally {
+                event.target.value = '';
+            }
+        });
+
+        $('closeImportPreviewModal').addEventListener('click', () => $('importPreviewModal').classList.remove('open'));
+        $('cancelImportBtn').addEventListener('click', () => $('importPreviewModal').classList.remove('open'));
+        $('importPreviewModal').addEventListener('click', event => { if (event.target === $('importPreviewModal')) $('importPreviewModal').classList.remove('open'); });
+
+        $('confirmImportBtn').addEventListener('click', async () => {
+            if (!pendingImportRows.length) return;
+            $('confirmImportBtn').disabled = true;
+            $('confirmImportBtn').textContent = 'جاري الاستيراد...';
+            try {
+                const toInsert = pendingImportRows.map(r => ({
+                    company_id: CURRENT_COMPANY_ID,
+                    sales_id: CURRENT_USER_ROLE === 'sales' ? CURRENT_USER_ID : null,
+                    name: r.name,
+                    phone: r.phone,
+                    whatsapp: r.whatsapp || r.phone,
+                    company: r.company,
+                    email: r.email,
+                    budget: r.budget,
+                    status: 'active',
+                    lead_score: 50
+                }));
+                const batchSize = 200;
+                let insertedCount = 0;
+                for (let i = 0; i < toInsert.length; i += batchSize) {
+                    const batch = toInsert.slice(i, i + batchSize);
+                    const { error } = await supabaseClient.from('customers').insert(batch);
+                    if (error) throw error;
+                    insertedCount += batch.length;
+                }
+                $('importPreviewModal').classList.remove('open');
+                pendingImportRows = [];
+                await loadCustomers();
+                updateHomeStats();
+                showMessage(`تم استيراد ${insertedCount} عميل بنجاح 🎉`, 'success');
+            } catch (error) {
+                showMessage('فشل الاستيراد: ' + (error.message || ''), 'error');
+            } finally {
+                $('confirmImportBtn').disabled = false;
+                $('confirmImportBtn').textContent = '✔ تأكيد الاستيراد';
+            }
+        });
+
         $('exportDealsBtn').addEventListener('click', () => {
             exportRowsToExcel(deals, [
                 { header: 'العميل', value: d => customers.find(c => c.id === d.customer_id)?.name || '' },
@@ -2213,6 +2396,16 @@
         // =====================================================
         // البحث الشامل
         // =====================================================
+        function highlightRow(tbodyId, id) {
+            const row = document.querySelector(`#${tbodyId} tr[data-id="${id}"]`);
+            if (!row) return;
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const original = row.style.background;
+            row.style.transition = 'background .4s';
+            row.style.background = 'var(--gold-soft)';
+            setTimeout(() => { row.style.background = original; }, 1800);
+        }
+
         async function performGlobalSearch(query) {
             const q = query.trim().toLowerCase();
             const resultsBox = $('globalSearchResults');
@@ -2220,16 +2413,26 @@
 
             await loadOwnersIfNeeded();
             if (propertiesLoadedOnce === false) await loadProperties();
+            if (leadsLoadedOnce === false) await loadLeads();
+            if (dealsLoadedOnce === false) await loadDeals();
 
             const matchedCustomers = customers.filter(c =>
                 (c.name || '').toLowerCase().includes(q) || (c.phone || '').includes(q) || (c.company || '').toLowerCase().includes(q)
             ).slice(0, 5);
             const matchedProperties = properties.filter(p => (p.title || '').toLowerCase().includes(q)).slice(0, 5);
             const matchedOwners = owners.filter(o => (o.name || '').toLowerCase().includes(q) || (o.phone || '').includes(q)).slice(0, 5);
+            const matchedLeads = leads.filter(l => (l.name || '').toLowerCase().includes(q) || (l.phone || '').includes(q) || (l.company || '').toLowerCase().includes(q)).slice(0, 5);
+            const matchedDeals = deals.filter(d => {
+                const customerName = (customers.find(c => c.id === d.customer_id)?.name || '').toLowerCase();
+                const propertyTitle = (properties.find(p => p.id === d.property_id)?.title || '').toLowerCase();
+                return customerName.includes(q) || propertyTitle.includes(q);
+            }).slice(0, 5);
 
             const sections = [
                 { label: '👥 العملاء', items: matchedCustomers.map(c => ({ id: c.id, title: c.name, subtitle: c.phone || '', type: 'customer' })) },
+                { label: '📞 العملاء المحتملون', items: matchedLeads.map(l => ({ id: l.id, title: l.name, subtitle: l.phone || '', type: 'lead' })) },
                 { label: '🏢 العقارات', items: matchedProperties.map(p => ({ id: p.id, title: p.title, subtitle: propertyTypeLabel(p.property_type), type: 'property' })) },
+                { label: '💰 الصفقات', items: matchedDeals.map(d => ({ id: d.id, title: customers.find(c => c.id === d.customer_id)?.name || 'صفقة', subtitle: properties.find(p => p.id === d.property_id)?.title || '', type: 'deal' })) },
                 { label: '🔑 الملاك', items: matchedOwners.map(o => ({ id: o.id, title: o.name, subtitle: o.phone || '', type: 'owner' })) }
             ].filter(s => s.items.length);
 
@@ -2264,6 +2467,13 @@
                 if (customer) { selectedId = customer.id; render(); openDetailModal(customer); }
             } else if (type === 'property') {
                 document.querySelector('.menu li[data-section="propertiesSection"]')?.click();
+                setTimeout(() => highlightRow('propertyRows', id), 60);
+            } else if (type === 'lead') {
+                document.querySelector('.menu li[data-section="leadsSection"]')?.click();
+                setTimeout(() => highlightRow('leadRows', id), 60);
+            } else if (type === 'deal') {
+                document.querySelector('.menu li[data-section="dealsSection"]')?.click();
+                setTimeout(() => highlightRow('dealRows', id), 60);
             } else if (type === 'owner') {
                 document.querySelector('.menu li[data-section="ownersSection"]')?.click();
                 const owner = owners.find(o => o.id === id);
@@ -2901,6 +3111,7 @@
                 }
                 if (lead) lead.sales_id = CURRENT_USER_ID;
                 renderLeads();
+                logAudit('التقاط عميل محتمل', 'leads', id, lead ? lead.name : '');
                 showMessage('تم التقاط العميل بنجاح، بقى مسؤوليتك دلوقتي', 'success');
             } catch (error) {
                 showMessage('فشل التقاط العميل: ' + (error.message || ''), 'error');
@@ -2944,7 +3155,7 @@
                 const lead = leads.find(l => l.id === id);
                 if (confirm(`هل تريد نقل العميل المحتمل ${lead.name} إلى سلة المهملات؟`)) {
                     try {
-                        await softDeleteRecord('leads', id);
+                        await softDeleteRecord('leads', id, lead.name);
                         leads = leads.filter(l => l.id !== id);
                         renderLeads();
                         showMessage('تم نقل العميل المحتمل إلى سلة المهملات', 'success');
@@ -3179,7 +3390,7 @@
                 const property = properties.find(p => p.id === id);
                 if (confirm(`هل تريد نقل العقار ${property.title} إلى سلة المهملات؟`)) {
                     try {
-                        await softDeleteRecord('properties', id);
+                        await softDeleteRecord('properties', id, property.title);
                         properties = properties.filter(p => p.id !== id);
                         renderProperties();
                         showMessage('تم نقل العقار إلى سلة المهملات', 'success');
@@ -3402,7 +3613,8 @@
                 const id = Number(button.dataset.id);
                 if (confirm('هل تريدي نقل هذه الصفقة إلى سلة المهملات؟')) {
                     try {
-                        await softDeleteRecord('deals', id);
+                        const dealCustomerName = customers.find(c => c.id === deals.find(d => d.id === id)?.customer_id)?.name || 'صفقة';
+                        await softDeleteRecord('deals', id, dealCustomerName);
                         deals = deals.filter(d => d.id !== id);
                         renderDeals();
                         showMessage('تم نقل الصفقة إلى سلة المهملات', 'success');
